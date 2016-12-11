@@ -100,4 +100,15 @@ end
     print(newString)
     return(newString)
 end
+
+-- performs a simple verification check of a file
+function bagel.glutenous(inputArray)
+    local arrayPos = 1
+    local veriNum = 0
+    while arrayPos < #inputArray do
+        veriNum = veriNum + string.byte(inputArray[arrayPos])
+        arrayPos = arrayPos + 1
+    end
+    return veriNum
+end
 return bagel
