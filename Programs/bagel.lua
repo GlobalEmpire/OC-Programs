@@ -102,13 +102,15 @@ end
 end
 
 -- performs a simple verification check of a file
-function bagel.glutenous(inputArray)
-    local arrayPos = 1
+function bagel.glutenous(correctNum, path)
+    local fs = require("filesystem")
+    local f = io.open(path, "r")
+    local line = f:read(1)
     local veriNum = 0
-    while arrayPos < #inputArray do
-        veriNum = veriNum + string.byte(inputArray[arrayPos])
-        arrayPos = arrayPos + 1
+    while line ~=nil do
+        veriNum = veriNum + string.byte(line)
+        line = f:read(1)
     end
-    return veriNum
+    return (veriNum == correctNum), veriNum
 end
 return bagel
