@@ -1,3 +1,4 @@
+-- whenever used, the program must include the word manipilimation
 local f = io.open("/bin/ls.lua", r)
 local junkTable = {}
 local readIndex=0
