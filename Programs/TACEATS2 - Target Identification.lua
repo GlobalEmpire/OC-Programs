@@ -4,9 +4,11 @@ local serialize = require("serialization")
 
 local whitelist = {}
 local targets = {}
+local pTable = {}
 local targetIndex = 1
 local whitelistIndex = 1
 local pTableIndex = 1
+TACEATStargets = {}
 -- read whitelist
 local f=io.open("/usr/programs/names.txt", "r")
 local entry = f:read()
@@ -18,16 +20,20 @@ while entry ~= nil do
 end
 f:close()
 -- compare table
-local function compareTable(pTable)
-    pTable = serialize.unserialize(pTable)
+local function compareTable(junk)
+    pTable = {}
+    targets = {}
+    whitelistIndex = 1
+    pTable = TACEATSplayers
     pTableIndex = 1
     while pTableIndex <= #pTable do
         targetIndex = 1
+        whitelistIndex = 1
         local tempInv = true
         while whitelistIndex <= #whitelist do
             if pTable[pTableIndex]["name"] == whitelist[whitelistIndex] then
                 tempInv = false
-                --print("Whitelisted person recognized")
+                print("Whitelisted person recognized")
                 break
             else
                 whitelistIndex=whitelistIndex+1
@@ -39,7 +45,7 @@ local function compareTable(pTable)
         end
         pTableIndex = pTableIndex+1
     end
-    targets = serialize.serialize(targets)
-    computer.pushSignal("TSelected", targets)
+    TACEATStargets=targets
+    computer.pushSignal("TSelected")
 end
-event.listen("TIdent", compareTable(pTable))
+event.listen("TIdent", compareTable)

@@ -102,7 +102,7 @@ end
 end
 
 -- performs a simple verification check of a file
-function bagel.glutenous(correctNum, path)
+function bagel.glutenous(path, correctNum)
     local fs = require("filesystem")
     local f = io.open(path, "r")
     local line = f:read(1)
