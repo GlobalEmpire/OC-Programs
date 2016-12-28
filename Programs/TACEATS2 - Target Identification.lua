@@ -8,7 +8,7 @@ local pTable = {}
 local targetIndex = 1
 local whitelistIndex = 1
 local pTableIndex = 1
-TACEATStargets = {}
+
 -- read whitelist
 local f=io.open("/usr/programs/names.txt", "r")
 local entry = f:read()
@@ -45,7 +45,6 @@ local function compareTable(junk)
         end
         pTableIndex = pTableIndex+1
     end
-    TACEATStargets=targets
-    computer.pushSignal("TSelected")
+    computer.pushSignal("TSelected", serialize.serialize(targets))
 end
 event.listen("TIdent", compareTable)

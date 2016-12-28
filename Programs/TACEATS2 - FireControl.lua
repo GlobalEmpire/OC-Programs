@@ -3,13 +3,13 @@ local serialize = require("serialization")
 local component = require("component")
 local turret = component.os_energyturret
 
-local targets = {}
 local targetX = 1
 local targetY = 1
 local targetZ = 1
 local angleOffset = 1
 local targetDistance = 1
 local targetIndex = 1
+
 local function computeAngle(targetX, targetY, targetZ, targetDistance)
     -- opposite is X, adjacent is Z
     -- because trig
@@ -39,8 +39,8 @@ local function computeAngle(targetX, targetY, targetZ, targetDistance)
     end
 end
 
-local function fireControl(junk)
-    targets = TACEATStargets
+local function fireControl(junk, targets)
+    targets = serialize.unserialize(targets)
     targetIndex = 1
     while targetIndex <= #targets do
         computeAngle(targets[targetIndex]["x"], targets[targetIndex]["y"], targets[targetIndex]["z"], targets[targetIndex]["distance"])
