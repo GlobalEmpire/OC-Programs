@@ -17,9 +17,9 @@ local function AcquirePaste(pasteURL, filePath)
 end
 
 if filesystem.exists("/usr/programs/TMain.lua") and filesystem.exists("/usr/programs/TIdent.lua") and filesystem.exists("/usr/programs/TFiCo.lua") then
-    local reason1, junk1 = bagel.glutenous("/usr/programs/TMain.lua", 199744)
-    local reason2, junk2 = bagel.glutenous("/usr/programs/TFiCo.lua", 261169)
-    local reason3, junk3 = bagel.glutenous("/usr/programs/TIdent.lua", 259827)
+    local reason1, junk1 = bagel.glutenous("/usr/programs/TMain.lua", 84707)
+    local reason2, junk2 = bagel.glutenous("/usr/programs/TFiCo.lua", 114519)
+    local reason3, junk3 = bagel.glutenous("/usr/programs/TIdent.lua", 109532)
     if reason1 == true and reason2 == true and reason3 == true then
         shell.execute("/usr/programs/TFiCo.lua")
         shell.execute("/usr/programs/TIdent.lua")
