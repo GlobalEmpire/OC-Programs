@@ -20,7 +20,7 @@ while entry ~= nil do
 end
 f:close()
 -- compare table
-local function compareTable(players)
+local function compareTable(_, players)
     pTable = {}
     targets = {}
     whitelistIndex = 1

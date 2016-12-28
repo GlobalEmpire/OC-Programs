@@ -87,7 +87,7 @@ function bagel.glutenous(path, correctNum)
 end
 
 --toasts a file
-function bagel.toastFile(path)
+function bagel.toastFile(path, toPath)
     local f = io.open(path, "r")
     local newString = ""
     local toasted = {}
@@ -104,7 +104,7 @@ function bagel.toastFile(path)
     end
     f:close()
     toastDex = 1
-    local wF = io.open(path, "w")
+    local wF = io.open(toPath, "w")
     while toasted[toastDex] ~= nil do
         wF:write(toasted[toastDex])
         toastDex = toastDex+1
@@ -113,7 +113,7 @@ function bagel.toastFile(path)
 end
 
 --untoasts a file
-function bagel.unToastFile(path)
+function bagel.unToastFile(path, toPath)
     local f = io.open(path, "r")
     local newString = ""
     local unToasted = {}
@@ -138,7 +138,7 @@ function bagel.unToastFile(path)
     end
     f:close()
     unDex = 1
-    local wF = io.open(path, "w")
+    local wF = io.open(toPath, "w")
     while unToasted[unDex] ~= nil do
         wF:write(unToasted[unDex].."\n")
         unDex = unDex+1
