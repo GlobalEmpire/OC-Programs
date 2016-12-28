@@ -9,7 +9,6 @@ turret.setArmed(true)
 local OS = true
 local radar = nil
 local index = 1
-TACEATSplayers = {}
 
 local players = {}
 if component.isAvailable("os_entdetector") == false then
@@ -37,8 +36,8 @@ while true do
                 index = index + 1
             end
         end
-        TACEATSplayers = players
-        computer.pushSignal("TIdent")
+        players = serialize.serialize(players)
+        computer.pushSignal("TIdent", players)
     end
     os.sleep(5)
 end

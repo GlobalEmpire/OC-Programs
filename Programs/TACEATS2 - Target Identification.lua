@@ -20,11 +20,11 @@ while entry ~= nil do
 end
 f:close()
 -- compare table
-local function compareTable(junk)
+local function compareTable(players)
     pTable = {}
     targets = {}
     whitelistIndex = 1
-    pTable = TACEATSplayers
+    pTable = serialize.unserialize(players)
     pTableIndex = 1
     while pTableIndex <= #pTable do
         targetIndex = 1
