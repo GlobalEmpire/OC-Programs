@@ -5,14 +5,14 @@ local component = require("component")
 local term = require("term")
 local mon = component.gpu
 local w, h = mon.getResolution()
-local Green = 0x00AA00
-local Red = 0xFF0000
-local Black = 0x000000
+local primary_color = 0xFF0000
+local accent_color = 0x00AA00
+local background_color = 0x000000
 
-buttonStatus = nil
+local buttonStatus
 
 function API.clear()
-    mon.setBackground(Black)
+    mon.setBackground(background_color)
     mon.fill(1, 1, w, h, " ")
 end
 
@@ -45,7 +45,7 @@ function API.screen()
     local currColor
     for name,data in pairs(button) do
         local on = data["active"]
-        if on == true then currColor = Green else currColor = Red end
+        if on == true then currColor = accent_color else currColor = primary_color end
         API.fill(name, currColor, data)
     end
 end
@@ -91,6 +91,12 @@ function API.label(w, h, text)
     term.write(text)
 end
 
+-- Function to allow for customization of button, background and text colors
+function API.customize(background, primary, accent, text)
+    background_color = background
+    primary_color = primary
+    accent_color = accent
+    mon.setForeground(text)
+end
+
 return API
- 
- 

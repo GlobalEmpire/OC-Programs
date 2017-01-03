@@ -30,7 +30,7 @@ end
 local secondaryScreen = screen[tonumber(term.read())]
 term.clear()
 gpu.bind(primaryScreen)
---gpu.setResolution(160, 50)
+--gpu.setResolution(80, 80)
 
 function save_dests(destinations)
     assert(table.save(destinations, "destinations.lua" ) == nil)
@@ -72,6 +72,8 @@ end
 local dest_length = 0
 local two_digits = false
 local page = 0
+
+API.customize(0xffffff, 0x333333, 0x4cc0ff, 0x000000)
 
 function API.fillTable()
     API.clear()
@@ -200,7 +202,7 @@ function cmd_done()
         API.clearTable()
         API.label(50, 20, "!Enter name for new destination on screen with keyboard!")
         gpu.bind(secondaryScreen)
-        gpu.setResolution(160, 50)
+        --gpu.setResolution(160, 50)
         API.clearTable()
         API.heading("Enter Name for: "..destinations[dests_amount]["uid"])
         while true do
@@ -210,7 +212,7 @@ function cmd_done()
             elseif code == 13 then
                 term.clear()
                 gpu.bind(primaryScreen)
-                --gpu.setResolution(160, 50)
+                --gpu.setResolution(80, 80)
                 save_dests(destinations)
                 page = 0
                 API.fillTable()
