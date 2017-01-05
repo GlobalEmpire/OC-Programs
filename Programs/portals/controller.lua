@@ -3,6 +3,7 @@
 dofile( "/usr/lib/table-save.lua" )
 
 local comp = require("component")
+
 local dials = comp.list("ep_dialling_device")
 local ed = comp.os_entdetector
 API = require("button_api")
@@ -119,6 +120,7 @@ function cmd_exit()
     term.clear()
     gpu.bind(secondaryScreen)
     --gpu.setResolution(160, 50)
+
     os.exit()
 end
 
@@ -237,7 +239,6 @@ function cmd_delete()
     end
     API.label(10, 40, "UID: "..destinations[dests_amount]["uid"])
 end
-
 
 term.setCursorBlink(false)
 --gpu.setResolution(160, 50)
