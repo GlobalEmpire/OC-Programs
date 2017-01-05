@@ -5,7 +5,6 @@ local component = require("component")
 local term = require("term")
 local mon = component.gpu
 local w, h = mon.getResolution()
-<<<<<<< HEAD
 local primary_color = 0xFF0000
 local accent_color = 0x00AA00
 local background_color = 0x000000
@@ -14,16 +13,6 @@ local buttonStatus
 
 function API.clear()
     mon.setBackground(background_color)
-=======
-local Green = 0x00AA00
-local Red = 0xFF0000
-local Black = 0x000000
-
-buttonStatus = nil
-
-function API.clear()
-    mon.setBackground(Black)
->>>>>>> refs/remotes/origin/master
     mon.fill(1, 1, w, h, " ")
 end
 
@@ -56,11 +45,7 @@ function API.screen()
     local currColor
     for name,data in pairs(button) do
         local on = data["active"]
-<<<<<<< HEAD
         if on == true then currColor = accent_color else currColor = primary_color end
-=======
-        if on == true then currColor = Green else currColor = Red end
->>>>>>> refs/remotes/origin/master
         API.fill(name, currColor, data)
     end
 end
@@ -96,16 +81,11 @@ function API.checkxy(x, y)
 end
 
 function API.heading(text)
-<<<<<<< HEAD
     local w, _ = mon.getResolution()
-=======
-    w, h = mon.getResolution()
->>>>>>> refs/remotes/origin/master
     term.setCursor((w-string.len(text))/2+1, 1)
     term.write(text)
 end
 
-<<<<<<< HEAD
 function API.label(text, x, y)
     term.setCursor(x, y)
     term.write(text)
@@ -132,13 +112,3 @@ function API.setRes(width, height)
 end
 
 return API
-=======
-function API.label(w, h, text)
-    term.setCursor(w, h)
-    term.write(text)
-end
-
-return API
- 
- 
->>>>>>> refs/remotes/origin/master
