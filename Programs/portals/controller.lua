@@ -3,45 +3,55 @@
 dofile( "/usr/lib/table-save.lua" )
 
 local comp = require("component")
-local dials = comp.list("ep_dialling_device")
-local ed = comp.os_entdetector
 API = require("button_api")
 local event = require("event")
 local term = require("term")
+local internet = require("internet")
+local dials = comp.list("ep_dialling_device")
+local ed = comp.os_entdetector
 local gpu = comp.gpu
 local adresses = comp.list("screen")
 local screen = {}
-local internet = require("internet")
 
-term.clear()
-print("Select touchscreen:")
-local loop_tracker = 1
-for adress in adresses do
-    screen[loop_tracker] = adress
-    print("["..loop_tracker.."]: "..adress)
-    loop_tracker = loop_tracker + 1
+local secondaryScreenRes = {160, 50}
+local primaryScreenRes = {120, 60 }
+
+local primaryScreen;
+local secondaryScreen;
+
+function init()
+    term.clear()
+    print("Select touchscreen:")
+    local loop_tracker = 1
+    for adress in adresses do
+        screen[loop_tracker] = adress
+        print("["..loop_tracker.."]: "..adress)
+        loop_tracker = loop_tracker + 1
+    end
+
+    primaryScreen = screen[tonumber(term.read())]
+    term.clear()
+    print("Select screen with keyboard:")
+    for k,v in pairs(screen) do
+        print("["..k.."]: "..v)
+    end
+    secondaryScreen = screen[tonumber(term.read())]
+
+    term.clear()
+    gpu.bind(primaryScreen)
+    API.setRes(primaryScreenRes[1], primaryScreenRes[2])
 end
-local primaryScreen = screen[tonumber(term.read())]
-term.clear()
-print("Select screen with keyboard:")
-for k,v in pairs(screen) do
-    print("["..k.."]: "..v)
-end
-local secondaryScreen = screen[tonumber(term.read())]
-term.clear()
-gpu.bind(primaryScreen)
---gpu.setResolution(80, 80)
 
 function save_dests(destinations)
-    assert(table.save(destinations, "destinations.lua" ) == nil)
+    assert(table.save(destinations, "destinations.lua") == nil)
 end
 
 function save_trespassers(trespassers)
-    assert(table.save(trespassers, "trespassers.lua" ) == nil)
+    assert(table.save(trespassers, "trespassers.lua") == nil)
 end
 
 function load_dests()
-    local dests, err = table.load( "destinations.lua" )
+    local dests, err = table.load("destinations.lua")
     if err == nil then
         return dests
     end
@@ -49,7 +59,7 @@ function load_dests()
 end
 
 function load_trespassers()
-    local tps, err = table.load( "trespassers.lua" )
+    local tps, err = table.load("trespassers.lua")
     if err == nil then
         return tps
     end
@@ -73,19 +83,17 @@ local dest_length = 0
 local two_digits = false
 local page = 0
 
-API.customize(0xffffff, 0x333333, 0x4cc0ff, 0x000000)
-
 function API.fillTable()
     API.clear()
     API.clearTable()
     if page == 0 then
         API.heading("Portal Control")
-        API.setTable("Exit", cmd_exit, nil, 140,156,2,4)
-        API.setTable("Add", cmd_add_dest, nil, 140,156,44,48)
+        API.setTable("Exit", cmd_exit, nil, 100,116,2,4)
+        API.setTable("Add", cmd_add_dest, nil, 100,116,44,48)
         if next(destinations) ~= nil then
             for k,v in pairs(destinations) do
-                API.setTable(v["name"], cmd_tp, v, 30,130,10 + (k-1)*4,11 + (k-1)*4)
-                API.setTable("Del "..k, cmd_delete_dest, k, 134,140,10 + (k-1)*4,11 + (k-1)*4)
+                API.setTable(v["name"], cmd_tp, v, 10,primaryScreenRes[1] - 16,10 + (k-1)*4,11 + (k-1)*4)
+                API.setTable("Del "..k, cmd_delete_dest, k, primaryScreenRes[1] - 14, primaryScreenRes[1] - 10, 10 + (k-1)*4, 11 + (k-1)*4)
             end
             API.label(2, 50, "Available Dests: "..dests_amount)
         else
@@ -98,9 +106,9 @@ function API.fillTable()
             API.setTable(tostring(i), cmd_entered_char, tostring(i), 10 + i*16 - math.floor(i/9) * 144, 22 + i*16  - math.floor(i/9) * 144, 5 + math.floor(i/9) * 12, 10 + math.floor(i/9) * 12)
         end
 
-        API.setTable(" ", cmd_entered_char, " ", 82,102,40,44)
-        API.setTable("Delete", cmd_delete, nil, 106,126,40,44)
-        API.setTable("Done", cmd_done, nil, 130,152,40,44)
+        API.setTable(" ", cmd_entered_char, " ", 44,64,40,44)
+        API.setTable("Delete", cmd_delete, nil, 68,88,40,44)
+        API.setTable("Done", cmd_done, nil, 92,112,40,44)
     end
     API.screen()
 end
@@ -120,7 +128,7 @@ function cmd_exit()
     API.clear()
     term.clear()
     gpu.bind(secondaryScreen)
-    --gpu.setResolution(160, 50)
+    API.setRes(secondaryScreenRes[1], secondaryScreenRes[2])
     os.exit()
 end
 
@@ -158,7 +166,7 @@ function monitor_trespassers(dest_name)
     trespassers[tps_amount]["names"] = ""
     trespassers[tps_amount]["destination"] = dest_name
     for _, v in pairs(players) do
-       trespassers[tps_amount]["names"] = trespassers[tps_amount]["names"].." "..v["name"]
+        trespassers[tps_amount]["names"] = trespassers[tps_amount]["names"].." "..v["name"]
     end
     trespassers[tps_amount]["time"] =  pcall(internet.request("http://www.timeapi.org/cet/now")())
     save_trespassers(trespassers)
@@ -202,7 +210,7 @@ function cmd_done()
         API.clearTable()
         API.label(50, 20, "!Enter name for new destination on screen with keyboard!")
         gpu.bind(secondaryScreen)
-        --gpu.setResolution(160, 50)
+        API.setRes(secondaryScreenRes[1], secondaryScreenRes[2])
         API.clearTable()
         API.heading("Enter Name for: "..destinations[dests_amount]["uid"])
         while true do
@@ -212,7 +220,7 @@ function cmd_done()
             elseif code == 13 then
                 term.clear()
                 gpu.bind(primaryScreen)
-                --gpu.setResolution(80, 80)
+                API.setRes(primaryScreenRes[1], primaryScreenRes[2])
                 save_dests(destinations)
                 page = 0
                 API.fillTable()
@@ -224,7 +232,7 @@ function cmd_done()
             API.label(50, 40, "Press enter when finished")
         end
     else
-        API.label(10, 42, "UID always contains 9 glyphs!")
+        API.label(10, 42, "UIDs always contains 9 glyphs!")
     end
 end
 
@@ -240,9 +248,9 @@ function cmd_delete()
     API.label(10, 40, "UID: "..destinations[dests_amount]["uid"])
 end
 
-
+init()
 term.setCursorBlink(false)
---gpu.setResolution(160, 50)
+API.customize(0xffffff, 0x333333, 0x4cc0ff, 0x000000)
 API.clear()
 API.fillTable()
 

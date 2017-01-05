@@ -81,13 +81,19 @@ function API.checkxy(x, y)
 end
 
 function API.heading(text)
-    w, h = mon.getResolution()
+    local w, _ = mon.getResolution()
     term.setCursor((w-string.len(text))/2+1, 1)
     term.write(text)
 end
 
-function API.label(w, h, text)
-    term.setCursor(w, h)
+function API.label(text, x, y)
+    term.setCursor(x, y)
+    term.write(text)
+end
+
+function API.centerLabel(text, y)
+    local w, _ = mon.getResolution()
+    term.setCursor((w-string.len(text))/2+1, y)
     term.write(text)
 end
 
@@ -97,6 +103,12 @@ function API.customize(background, primary, accent, text)
     primary_color = primary
     accent_color = accent
     mon.setForeground(text)
+end
+
+function API.setRes(width, height)
+    w = width
+    h = height
+    mon.setResolution(width, height)
 end
 
 return API
