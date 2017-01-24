@@ -1,0 +1,33 @@
+-- Example configuration file for S3IX
+
+-- Builtin kernel services (modules / drivers) --
+--[[
+One per line, included as follows:
+  service <service_name>
+  KEEP IN MIND: These will be built into the kernel.
+  Unless you have a good reason, you can usually load
+  these during / after boot.
+  (Some may be commented out, to reduce kernel image size)
+--]]
+
+service 'bus/component'		-- Open Computers component support
+service 'ocfs'				-- Open Computers managed disk filesystem
+
+-- Kernel / service options --
+
+BUILD_DESTDIR='boot'
+BUILD_IMGNAME='DEFAULT'
+S3IX_KNAME='My example kernel'
+
+
+-- DO NOT EDIT BELOW THIS LINE --
+       -- DO NOT REMOVE --
+
+kernel 'lib/core/bootrd.lua'
+kernel 'lib/core/main.lua'
+kernel 'lib/core/entry.lua'
+
+bootrd 'lib/vendor/middleclass/middleclass.lua'
+bootrd 'lib/process.lua'
+bootrd 'lib/role/queue.lua'
+bootrd 'lib/role/service.lua'
