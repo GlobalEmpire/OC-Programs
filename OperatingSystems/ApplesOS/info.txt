@@ -1,0 +1,8 @@
+Full name: Directory meanings (equivalent):
+exec:       Executables:        Stores system binaries (bin)
+conf:       Configurations:     Stores system configuration files (etc)
+inf:        Information:        Stores system library files (lib)
+primary:    Primary:            Stores user files and directories (home)
+del:        Deletable:          Stores files to be cleared on reboot (tmp)
+ext:        Externals:          Contains external filesystems (mnt)
+sys:        System:             Contains the system files for booting and running (boot)

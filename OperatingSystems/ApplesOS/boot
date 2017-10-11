@@ -1,0 +1,3 @@
+while true do
+  computer.beep(math.random(20, 2000), math.random(0.2, 5))
+end
