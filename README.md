@@ -9,5 +9,5 @@ If you have any questions, concerns, requests, or complaints, please feel free t
 
 For more information on the Global Empire, feel free to do any of the above.
 
-The Global Empire: Powering the future
+The Global Empire: Globally Engineered, Personally Designed
 Pro Agnitione
