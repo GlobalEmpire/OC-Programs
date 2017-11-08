@@ -1,3 +1,23 @@
+local gpu = component.list("gpu")()
+local screen = component.list("screen")()
+
+gpu = component.proxy(gpu)
+gpu.bind(screen)
+
+local x,y = gpu.getResolution()
+
+gpu.fill(1, 1, x, y, " ")
+local curX, curY = 1, 1
+
+load('/sys/keyboard.lua')
 while true do
-  computer.beep(math.random(20, 2000), math.random(0.2, 5))
+    local results = {computer.pullSignal()}
+    if results[1] == "key_down" then
+        gpu.set(curX, curY, string.char(results[3]))
+        curX = curX + 1
+        if curX > x then
+            curY = curY + 1
+            curX = 0
+        end
+    end
 end
