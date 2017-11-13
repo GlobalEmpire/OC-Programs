@@ -1,23 +1,22 @@
-local gpu = component.list("gpu")()
-local screen = component.list("screen")()
+-- do
+  local loadfile = load([[return function(file)
+    local pc,cp = computer or package.loaded.computer, component or package.loaded.component
+    local addr, invoke = pc.getBootAddress(), cp.invoke
+    local handle, reason = invoke(addr, "open", file)
+    assert(handle, reason)
+    local buffer = ""
+    repeat
+      local data, reason = invoke(addr, "read", handle, math.huge)
+      assert(data or not reason, reason)
+      buffer = buffer .. (data or "")
+    until not data
+    invoke(addr, "close", handle)
+    return load(buffer, "=" .. file, "bt", _G)
+  end]], "=loadfile", "bt", _G)()
+  loadfile("/inf/aos/prep.lua")(loadfile)
+-- end
 
-gpu = component.proxy(gpu)
-gpu.bind(screen)
-
-local x,y = gpu.getResolution()
-
-gpu.fill(1, 1, x, y, " ")
-local curX, curY = 1, 1
-
-load('/sys/keyboard.lua')
 while true do
-    local results = {computer.pullSignal()}
-    if results[1] == "key_down" then
-        gpu.set(curX, curY, string.char(results[3]))
-        curX = curX + 1
-        if curX > x then
-            curY = curY + 1
-            curX = 0
-        end
-    end
+    shell = loadfile("/inf/aos/shell.lua")
+    shell()
 end
