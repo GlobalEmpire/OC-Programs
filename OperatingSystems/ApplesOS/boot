@@ -3,7 +3,10 @@
     local pc,cp = computer or package.loaded.computer, component or package.loaded.component
     local addr, invoke = pc.getBootAddress(), cp.invoke
     local handle, reason = invoke(addr, "open", file)
-    assert(handle, reason)
+    if not handle then
+        return
+    end
+    -- assert(handle, reason)
     local buffer = ""
     repeat
       local data, reason = invoke(addr, "read", handle, math.huge)
@@ -13,10 +16,10 @@
     invoke(addr, "close", handle)
     return load(buffer, "=" .. file, "bt", _G)
   end]], "=loadfile", "bt", _G)()
-  loadfile("/inf/aos/prep.lua")(loadfile)
+  loadfile("prep.lua")(loadfile)
 -- end
 
 while true do
-    shell = loadfile("/inf/aos/shell.lua")
+    shell = loadfile("shell.lua")
     shell()
 end
