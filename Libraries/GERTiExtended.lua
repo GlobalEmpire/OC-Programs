@@ -64,7 +64,7 @@ local connStat = {}
   end
  else
   io.stderr:write("GERTiExtended.setNet() expected table, got "..type(tbl))
-  Log("GERTiExtended.setNet() Argument #1, expected table, got "..type(tbl))
+  Log("GERTiExtended.setNet() Argument #1, expected table, got "..type(tbl),"CRITICAL")
  return connStat
 end
 
