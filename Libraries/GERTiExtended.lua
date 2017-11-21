@@ -11,9 +11,6 @@ Global Empire, TheBoxFox
 
 local GERTi = require("GERTi") --Require our mother library 
 
---Require all needed system libraries.
-local io = require("io")
-
 --ONLY CHANGE THESE SETTINGS IF YOU KNOW WHAT YOU ARE DOING
 
 local DEBUG = false
@@ -39,7 +36,7 @@ end
 function GERTiExtended.setNet(tbl)
 
 local connStat = {}
-
+ if type(tbl) == "table" then
   for k,v in pairs(tbl)do
     if type(v) == "number" then
      local skt, err = GERTi.openSocket(v)
@@ -65,7 +62,9 @@ local connStat = {}
     streams[#streams+1] = connStat[k]
   
   end
-
+ else
+  io.stderr:write("GERTiExtended.setNet() expected table, got "..type(tbl))
+  Log("GERTiExtended.setNet() Argument #1, expected table, got "..type(tbl))
  return connStat
 end
 
@@ -77,7 +76,7 @@ function GERTiExtended.Netcast(data,peers)
     end
   else
     Log("GERTiExtended.Netcast Argument #2, expected table got"..type(peers),"CRITICAL")
-    io.stderr:write("GERTiExtended.Netcast Argument #2, expected table got"..type(peers))
+    io.stderr:write("GERTiExtended.Netcast Argument #2, expected table got "..type(peers))
   end
 end
 
@@ -95,6 +94,6 @@ Log("Flush completed, remaining objects in table:"..#streams,"DEBUG")
 end
 
 
-Log("GERTiExtended hasloaded.","DEBUG")
+Log("GERTiExtended has loaded.","DEBUG")
 
 return GERTiExtended
