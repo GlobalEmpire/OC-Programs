@@ -16,7 +16,6 @@ OpenComputersRapidCRAM Technology [Video Streaming Like [ICE2](https://github.co
 Files:
 - Main.py [Used For Streaming to files.]
 - ImpageToPalatte [Convert Still images that are extracted to a textstream]
-- constants [Well its just a really large constant. This constant is used when audio is being sent via dfpwm]
 - client.lua [Client for the OC computers]
 
 ## Requirements
