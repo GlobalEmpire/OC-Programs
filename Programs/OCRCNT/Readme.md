@@ -1,8 +1,9 @@
-# OCRC
-OpenComputersRapidCRAM Technology [Video Streaming Like [ICE2](https://github.com/ChenThread/ice2)]
+# OCRCNT
+OpenComputersRapidCRAM New Technology [Video Streaming Like [ICE2](https://github.com/ChenThread/ice2)]
 - Thanks to [gamax92](https://github.com/gamax92) for coding much of the lua script!
 
 # WARNING
+- ***WORK IN PROGRESS. DO NOT USE***
 - This Streaming software is only to be
 - **USED FOR EXPERINCED USERS**
 - If you just started using OpenComputers:
@@ -20,14 +21,19 @@ Files:
 - client.lua [Client for the OC computers]
 
 ## Requirements
-### ImpageToPalette.py
+### ProcessImage.py
 - Python 3.6.2 
 - Linux Users: [Pillow-SIMD](https://github.com/uploadcare/pillow-simd)
 - Windows users : Install this [Pillow-SIMD](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pillow-simd) instead
+- Linux Users: [scikit-image](http://scikit-image.org)
+- Windows Users: [scikit-image](https://www.lfd.uci.edu/~gohlke/pythonlibs/#scikit-image)
 - [tqdm](https://pypi.python.org/pypi/tqdm) aka Progress in Arabic
+### ProcessVideo.py
+- ffmpy & ffmpeg
 ### Main.py
 - zlib (Should Have come packaged with your Python install)
 - socket (Should Have come packaged with your Python install)
+- struct
 
 ### Usage
 1. Change Directory so that your directory is in `imagesequence`
@@ -35,7 +41,7 @@ Files:
 3. Move your video file to imagesequence folder.
 4. [`ffmpeg -i (Input file) Out%03d.png`] Run this command where Input file is your video file.
 5. Remove the video file.
-6. run ImpageToPalette.py
+6. run PrcocessImage.py
 7. By Default your FPS should be 30 for your video. if not, please check with your local video software info page...
 - VLC: Tools > Media Infomation > Codec > Frame Rate [Round to nearest number if its decimal.]
 - Windows Media Player: *Why are you still using it... get VLC or something else.*
