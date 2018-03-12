@@ -25,18 +25,6 @@ except ImportError:
 
     colorama.init(True)
 print("Done!")
-"""
-There are 2 methods:
-- Accuracy Based (Resize and Palette image) # 771 bboxes
-- Speed based (Convert image to Palette and then Resize) # 771 bboxes
-
-mode:
-- 0: Speed
-- 1: Accuracy
-- 2: Unused (Balanced)
-Speed results in lower bounding boxes created. but with very bad quality.
-Accuracy is the opposite. Higher BBoxes but more accurate.
-"""
 ffmpegmessage = [
     "Complaining to gamax92 to help him",
     "Waiting for Cat pictures",
