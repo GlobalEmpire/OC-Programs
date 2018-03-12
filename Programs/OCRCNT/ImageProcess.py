@@ -7,7 +7,7 @@ import time
 import numpy
 from PIL import Image
 
-from Programs.OCRCNT import Utils
+import Utils
 
 print("Checking and Installing dependancies.")
 try:
@@ -74,6 +74,9 @@ def main():
         deleteinputs = True
     else:
         deleteinputs = False
+    print("--- Optimiser ---")
+    print("Compares all the images in pairs. and generates the difference between them.\n"
+          "Currently it isn't available but its coming soon!")
     print("--- Working! ---")
     try:
         x = os.listdir('videoinput')[0]
@@ -84,49 +87,42 @@ def main():
         print("Did you delete the videoinput folder? You monster!")
         sys.exit()
     print("Progressing with Milla... [Generating Image Sequence]")
-    process = subprocess.Popen(['ffmpeg', '-i',
-                                os.path.join(os.getcwd(), 'videoinput', x),
-                                os.path.join(os.getcwd(), 'input', 'image-%04d.jpg')])
+    if fps:
+        #
+        process = subprocess.Popen(['ffmpeg', '-i',
+                                    os.path.join(os.getcwd(), 'videoinput', x), f'-vf fps={fps}',
+                                    os.path.join(os.getcwd(), 'input', '%d.jpg')])
+    else:
+        process = subprocess.Popen(['ffmpeg', '-i',
+                                    os.path.join(os.getcwd(), 'videoinput', x),
+                                    os.path.join(os.getcwd(), 'input', '%d.jpg')])
     while True:
         if process.poll() == 0:
             break
         else:
             time.sleep(5)
             print(f'\r{random.choice(ffmpegmessage)}', end='')
+    print("Done.")
+    print("Being Defiant [Converting Images]")
     for image in os.listdir('input'):
         image = Image.open(os.path.join(os.getcwd(), 'image', image))
         arrayim = Image.fromarray(numpy.array(Utils.applyrgbhex(numpy.array(image), hexify=False)).astype('uint8'))
         arrayim = Utils.resizetosize(arrayim)
+        os.remove(os.path.join(os.getcwd(), 'image', image))
+        arrayim.save(os.path.join(os.getcwd(), 'image', image))
 
     print("We are done processing the Video! Whew...")
+    input()
     print("Adding Music [Generating music DFPWM]")
-    process = subprocess.Popen(['ffmpeg', '-i',
-                                os.path.join(os.getcwd(), 'videoinput', x),
-                                os.path.join(os.getcwd(), 'input', f'{x.split(".")[:-1]}.wav')])
-    while True:
-        if process.poll() == 0:
-            break
-        else:
-            time.sleep(5)
-            print(f'\r{random.choice(ffmpegmessage)}', end='')
-    process = subprocess.Popen(
-        ['java', '-jar', os.path.join(os.getcwd(), 'deps', 'LionRay.jar'),
-         [f for f in os.listdir(os.path.join(os.getcwd(), 'videoinput')) if f.endswith('.wav')][0]])
-    while True:
-        if process.poll() == 0:
-            break
-        else:
-            time.sleep(5)
-            print(f'\r{random.choice(ffmpegmessage)}', end='')
+    subprocess.call(['ffmpeg', '-i', os.path.join(os.getcwd(), 'videoinput', x),
+                     os.path.join(os.getcwd(), 'audio', f'{x.split(".")[:-1]}.wav')])
+    subprocess.call(['java', '-jar', os.path.join(os.getcwd(), 'deps', 'LionRay.jar'),
+                     [f for f in os.listdir(os.path.join(os.getcwd(), 'audio')) if f.endswith('.wav')][0]])
+    print(f'\r{random.choice(ffmpegmessage)}', end='')
     print("")
-    print("Being Defiant [Converting Images]")
-    if mode == 1:
-        print("Running In Accuracy Mode.")
-        for x in os.listdir(os.path.join(os.getcwd(), 'input')):
-            pass
-    else:
-        pass
     print("Cleanup")
+    if deleteinputs:
+        os.remove(os.path.join(os.getcwd(), 'videoinput', x))
 
 
 if __name__ == '__main__':
