@@ -2,9 +2,10 @@
 imageio lib
 """
 import os
-
+import sys
 import imageio
 import tqdm
+import traceback
 
 import Utils
 
@@ -26,11 +27,22 @@ def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
 
     with tqdm.tqdm(desc="Images Extracted & Converted", total=readerobject.get_length(),
                    unit='frames') as bar:
-        for index, image in enumerate(readerobject):
-            image = Utils.resizetosize(Utils.correcttopil(image))
-            image = Utils.correcttonumpy(Utils.applypilpalette(image))
-            wrapperobject.adddata(image)
-            bar.update(1)
+        try:
+            for index, image in enumerate(readerobject):
+                image = Utils.resizetosize(Utils.correcttopil(image))
+                image = Utils.correcttonumpy(Utils.applypilpalette(image))
+                wrapperobject.adddata(image)
+                bar.update(1)
+        except RuntimeError as e:
+            print(f"\n\n---------------------- {Utils.crashrand()} ----------------------")
+            print("!!! RUNTIME ERROR FROM IMAGEIO !!!\n"
+                  "REPORT THIS VIDEO FILE TO GITHUB!\n"
+                  "https://github.com/GlobalEmpire/OC-Programs/issues\n"
+                  f"Video Link or file: {fp} [Upload it to dropbox or a file hosting service. NOT YOUTUBE.]\n"
+                  f"Report The Error Below:\n\"{e}\"\n"
+                  )
+            print("-----------------------------------------------------------------")
+            sys.exit(400)
     wrapperobject.finish()
 
 

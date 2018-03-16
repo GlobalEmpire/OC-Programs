@@ -1,10 +1,53 @@
 from bisect import bisect_left
-from joblib import Parallel, delayed
+import random
 import numpy
-from PIL import Image
+from PIL import Image, GifImagePlugin
 from skimage import measure
+import itertools
 
 # Zoom zoom! ;)
+Crashes = ["HELP IM TRAPPED IN A COMMAND!",
+           "O NO",
+           "Baby you're the highlight of my lowlife",
+           "Oh no, this broke. What am I going to do?",
+           "Zoom, zoom, fast reports!",
+           "Aw yea yea, aw yea yea yea yea",
+           "I WANNA KNOOOOOOW CAN YOU SHOOOOW ME",
+           "TELL ME MOOOORE PLEEEASE SHOOW ME",
+           "I'll be needing stitches",
+           "Fite ma fite all alone",
+           "I really need to fix that issue at some point",
+           "Yea, I know that the name field is broken",
+           "This is probably that stupid collision error again",
+           "I said hey, what's going on?",
+           "Never gonna give you up",
+           "Never gonna let you down",
+           "Never gonna run around and desert you",
+           "We drew a map to a better place",
+           "SUGAAAAAAR YES PLEEEEASE",
+           "Just turn it off and back on, that'll fix it",
+           "THIRTY-THREE YEARS AGO",
+           "It's always the twin!",
+           "BUT I'VE NEVER HAD A CRASH!",
+           "Which brings us here... now...",
+           "A journey through the time",
+           "Always watch the sub",
+           "What's up with this thing?",
+           "I know I always romanticize things",
+           "Michael dies!",
+           "It's you! It's always been you!",
+           "Who's Sin Rostro?",
+           "I wouldn't mind if this stopped happening",
+           "Did you press F7 for too long again?",
+           "Hello IT... Have you tried turning it off and on again?",
+           "#Blame *Insert Random Modder here*",
+           ""
+           ]
+
+
+def crashrand():
+    return random.choice(Crashes)
+
 
 # Putpaltte.
 aalette = [0, 0, 0, 0, 0, 64, 0, 0, 128, 0, 0, 192, 0, 0, 255, 0, 36, 0, 0, 36, 64, 0, 36, 128, 0, 36, 192, 0, 36, 255,
@@ -106,7 +149,50 @@ def resizetosize(pilimage, maxwidth=None, maxheight=None):
 
 
 def createfillers(numpyarray):
+    """
+    TO-DO: This does not have palette data! [Fixed. Convert to RGB.]
+    :param numpyarray:
+    :return:
+    """
     labelarray, count = measure.label(numpyarray, connectivity=None, return_num=True)
     print(f"Total Count: {count}")
     properties = measure.regionprops(labelarray)
     return properties
+
+
+def processframe(pilimage):
+    """
+    Generates all the required stuff ready with regionprops all correct.
+    :param pilimage: PIL.Image
+    :return:
+    """
+    # this gets all the indexes.
+    # we assume index 0 as discarded (Can't really do much with black images.)
+    numpyarrayfrompil = numpy.array(pilimage)
+    # First we pass to regionprops
+    props = createfillers(numpyarrayfrompil)
+    # pass all the data we need now to the mapprops2color
+    # returns a string which can be cerealised.
+    return mapprops2color(props, numpyarrayfrompil, pilimage.getpalette())
+
+
+def gethex(rgbtuple):
+    # does not check. since all values should be in 0 to 255...
+    # unless someone is being an idiot.
+    r, g, b = rgbtuple
+    return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+
+
+def mapprops2color(props, original_numpyarray, image):
+    rgbpalette = [x for x in grouper(3, image.getpalette())]
+    data = []
+    for x in props:
+        x1, y1, x2, y2 = x.bbox
+        colorindex = original_numpyarray[x1][y1]
+        data.append(f"{gethex(rgbpalette[colorindex])}|{x1},{y1}|{x2},{y2}|")
+    return data
+
+
+def grouper(n, iterable, fillvalue=None):
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(fillvalue=fillvalue, *args)
