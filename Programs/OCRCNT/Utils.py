@@ -50,7 +50,8 @@ def crashrand():
 
 
 # Putpaltte.
-aalette = [0, 0, 0, 0, 0, 64, 0, 0, 128, 0, 0, 192, 0, 0, 255, 0, 36, 0, 0, 36, 64, 0, 36, 128, 0, 36, 192, 0, 36, 255,
+# 1,1,1 -> Special offset to see "Real" black pixels changed.
+aalette = [1, 1, 1, 0, 0, 64, 0, 0, 128, 0, 0, 192, 0, 0, 255, 0, 36, 0, 0, 36, 64, 0, 36, 128, 0, 36, 192, 0, 36, 255,
            0, 73, 0, 0, 73, 64, 0, 73, 128, 0, 73, 192, 0, 73, 255, 0, 109, 0, 0, 109, 64, 0, 109, 128, 0, 109, 192,
            0, 109, 255, 0, 146, 0, 0, 146, 64, 0, 146, 128, 0, 146, 192, 0, 146, 255, 0, 182, 0, 0, 182, 64, 0, 182,
            128, 0, 182, 192, 0, 182, 255, 0, 219, 0, 0, 219, 64, 0, 219, 128, 0, 219, 192, 0, 219, 255, 0, 255, 0, 0,
@@ -83,7 +84,7 @@ aalette = [0, 0, 0, 0, 0, 64, 0, 0, 128, 0, 0, 192, 0, 0, 255, 0, 36, 0, 0, 36, 
            255, 219, 255, 255, 255, 0, 255, 255, 64, 255, 255, 128, 255, 255, 192, 255, 255, 255, 255, 255, 255, 255,
            255,
            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-           255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+           255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0]
 
 palimage = Image.new('P', (16, 16))
 palimage.putpalette(aalette)
@@ -155,7 +156,6 @@ def createfillers(numpyarray):
     :return:
     """
     labelarray, count = measure.label(numpyarray, connectivity=None, return_num=True)
-    print(f"Total Count: {count}")
     properties = measure.regionprops(labelarray)
     return properties
 
@@ -173,7 +173,7 @@ def processframe(pilimage):
     props = createfillers(numpyarrayfrompil)
     # pass all the data we need now to the mapprops2color
     # returns a string which can be cerealised.
-    return mapprops2color(props, numpyarrayfrompil, pilimage.getpalette())
+    return mapprops2color(props, numpyarrayfrompil, pilimage)
 
 
 def gethex(rgbtuple):
@@ -189,7 +189,11 @@ def mapprops2color(props, original_numpyarray, image):
     for x in props:
         x1, y1, x2, y2 = x.bbox
         colorindex = original_numpyarray[x1][y1]
-        data.append(f"{gethex(rgbpalette[colorindex])}|{x1},{y1}|{x2},{y2}|")
+        # Workaround the limitation that you cant have transparency.
+        if rgbpalette[colorindex] == (1, 1, 1):
+            data.append(f'#000000|{x1},{y1}|{x2},{y2}|')
+        else:
+            data.append(f"{gethex(rgbpalette[colorindex])}|{x1},{y1}|{x2},{y2}|")
     return data
 
 

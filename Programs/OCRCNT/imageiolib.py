@@ -34,14 +34,18 @@ def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
                 wrapperobject.adddata(image)
                 bar.update(1)
         except RuntimeError as e:
-            print(f"\n\n---------------------- {Utils.crashrand()} ----------------------")
-            print("!!! RUNTIME ERROR FROM IMAGEIO !!!\n"
-                  "REPORT THIS VIDEO FILE TO GITHUB!\n"
-                  "https://github.com/GlobalEmpire/OC-Programs/issues\n"
-                  f"Video Link or file: {fp} [Upload it to dropbox or a file hosting service. NOT YOUTUBE.]\n"
-                  f"Report The Error Below:\n\"{e}\"\n"
-                  )
-            print("-----------------------------------------------------------------")
+            if 'frame' in e:
+                print("WARN: Frame Error in reading Video. Silently discarding.")
+                wrapperobject.finish()
+            else:
+                print(f"\n\n---------------------- {Utils.crashrand()} ----------------------")
+                print("!!! RUNTIME ERROR FROM IMAGEIO !!!\n"
+                      "REPORT THIS VIDEO FILE TO GITHUB!\n"
+                      "https://github.com/GlobalEmpire/OC-Programs/issues\n"
+                      f"Video Link or file: {fp} [Upload it to dropbox or a file hosting service. NOT YOUTUBE.]\n"
+                      f"Report The Error Below:\n\"{e}\"\n"
+                      )
+                print("-----------------------------------------------------------------")
             sys.exit(400)
     wrapperobject.finish()
 
