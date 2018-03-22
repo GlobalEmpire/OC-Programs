@@ -46,7 +46,7 @@ def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
                       f"Report The Error Below:\n\"{e}\"\n"
                       )
                 print("-----------------------------------------------------------------")
-                sys.exit(400)
+            sys.exit(400)
     wrapperobject.finish()
 
 
