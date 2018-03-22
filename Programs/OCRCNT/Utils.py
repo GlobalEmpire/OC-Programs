@@ -141,17 +141,17 @@ def applypilpalette(pilimage):
 
 def resizetosize(pilimage, maxwidth=None, maxheight=None):
     if maxwidth is None or maxheight is None:
-        maxheight = 50
-        maxwidth = 160
+        # 160, starting from 1. soo conpensation.
+        maxheight = 49
+        maxwidth = 159
     width = pilimage.size[0]
     height = pilimage.size[1]
-    ratio = max(width // maxwidth, height // maxheight)
+    ratio = max(width / maxwidth, height / maxheight)
     return pilimage.resize((width // ratio, height // ratio))
 
 
 def createfillers(numpyarray):
     """
-    TO-DO: This does not have palette data! [Fixed. Convert to RGB.]
     :param numpyarray:
     :return:
     """

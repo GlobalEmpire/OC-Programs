@@ -1,12 +1,14 @@
 import socket
 
 import numpy
+import os
 import time
 from PIL import Image
 import natsort
 import Utils
 import zlib
 from tqdm import tqdm
+
 
 def pairwise(t):
     it = iter(t)
@@ -24,11 +26,19 @@ def gifyielder(gifpil, offset=1):
             break
 
 
+def chunkifyfile(file, chunk_size=2048):
+    while True:
+        data = file.read(chunk_size)
+        if not data:
+            break
+        yield data
+
+
 def preparevideo(gif):
     videodata = []
     image = Image.open(gif)
     initframe = Utils.processframe(image)
-    with tqdm(desc='Frames Done',total=image.n_frames) as pbar:
+    with tqdm(desc='Frames Done', total=image.n_frames) as pbar:
         for frame in gifyielder(image):
             videodata.append(Utils.processframe(frame))
             pbar.update(1)
@@ -68,9 +78,10 @@ def packetbuilder(plist):
             workinglist = []
             colorswaps += 1
         else:
-            workinglist.append(f'[{mincoord}|{maxcord}]')
-    return str(listgrouped).encode('ansi'), colorswaps
-    # to be continued!
+            workinglist.append(f'[{mincoord},{maxcord}]')
+    # flush working buffer.
+    listgrouped.append(f'{currentcolor}|{"|".join(workinglist)}')
+    return '/'.join(listgrouped), colorswaps
 
 
 class PacketHandler:
@@ -111,24 +122,29 @@ class PacketHandler:
                 print(f"Client connected: {address}")
                 buffer = client_sock.recv(1024)
             if buffer == b"READY":
-                print("Testing packetsize")
-                lines = b"0"*10000
-                client_sock.send(lines)
-                clientsize = waituntil(None, client_sock)
-                print(f"Recieved Client's Buffer Size: {int(clientsize.decode('utf-8'))}")
                 print("Client is ready. Asking for Buffer sizes...")
                 client_sock.send(b"BSIZE?")
                 packetsize = waituntil(None, client_sock)
                 print(f"Recieved Requested Bffersize for frames: {int(packetsize.decode('utf-8'))}")
                 self.buffersize = int(packetsize.decode('utf-8'))
             elif buffer == b"AUDIO":
-                client_sock.send(zlib.compress(open(self.audiopath, 'rb')))
+                print("Client Requested Audio.")
+                file = open(self.audiopath, 'rb')
+                readsize = waituntil(None, client_sock)
+                client_sock.send(str(os.path.getsize(self.audiopath)).encode('utf-8'))
+                for chunk in chunkifyfile(file, readsize):
+                    client_sock.send(chunk)
+                print("Finished Sending packet waiting for confirmation.")
+                waituntil(b"OK", client_sock)
+                print("Client Reports OK. Waiting for further instructions.")
             elif buffer == b"PACK":
                 print("Sending packet!")
                 if self.frame == 0:
-                    client_sock.send(zlib.compress(packetbuilder(self.initframe)[0]))
+                    client_sock.send(zlib.compress(self.initframe)[0])
                     for x in self.updates[:self.frame + self.buffersize]:
                         client_sock.send(zlib.compress(packetbuilder(x)[0]))
+                        waituntil(b"OK", client_sock)
+
     def debugpacket(self):
         return
 
