@@ -32,13 +32,13 @@ def main():
         print("Gonna need to setup a few Config First.")
         print("--- Optimise ---")
         print("There are 2 types:\n"
-              "Level [1] [Default]: Uses imageio's subrectagles to optimise the video. great for a still or slow "
+              "Level [1] [Subrectangles]: Uses imageio's subrectagles to optimise the video. great for a still or slow "
               "image.\n "
-              "Level [2] [Gifsicle]: Uses Gifsicle to compress the images. Smaller Size.")
+              "Level [2] [Gifsicle] [Default]: Uses Gifsicle to compress the images. Smaller Size.")
         try:
             gifsicleoptimise = int(input('Optimization method >:'))
         except ValueError:
-            gifsicleoptimise = 1
+            gifsicleoptimise = 2
             print("Invalid value. Using Defaults.")
         print("--- Delete Video after done? ---")
         print("[Y]es, [N]o (Default)")
@@ -73,7 +73,7 @@ def main():
                  '-o', os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif")])
         print("Adding Music [Generating music DFPWM] [May take a while depending on the kind of audio file.]")
         subprocess.call(['ffmpeg', '-i', os.path.join(os.getcwd(), 'videoinput', x),
-                         os.path.join(os.getcwd(), 'workinginput', f'{name[0]}.wav')])
+                         os.path.join(os.getcwd(), 'workinginput', f'{name[0]}.wav')], stderr=subprocess.DEVNULL)
         subprocess.call(['java', '-jar', os.path.join(os.getcwd(), 'deps', 'LionRay.jar'),
                          os.path.join(os.getcwd(), 'workinginput', f'{name[0]}.wav'),
                          os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.dfpwm")])

@@ -58,6 +58,7 @@ def waituntil(packet, waitsocket):
                 return buff
 
 
+# TO-DO: Optimise some more. [DONE]
 def packetbuilder(plist):
     """
     Optimise packet sizes and OC background changing
@@ -71,14 +72,14 @@ def packetbuilder(plist):
     listgrouped = []
     workinglist = []
     for x in sortedlist:
-        color, mincoord, maxcord, _ = x.split('|')
+        color, bbox, _ = x.split('|')
         if color != currentcolor and workinglist != []:
             listgrouped.append(f'{currentcolor}|{"|".join(workinglist)}')
             currentcolor = color
             workinglist = []
             colorswaps += 1
         else:
-            workinglist.append(f'[{mincoord},{maxcord}]')
+            workinglist.append(f'[{bbox}]')
     # flush working buffer.
     listgrouped.append(f'{currentcolor}|{"|".join(workinglist)}')
     return '/'.join(listgrouped), colorswaps

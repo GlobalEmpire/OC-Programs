@@ -1,9 +1,10 @@
-from bisect import bisect_left
-import random
-import numpy
-from PIL import Image, GifImagePlugin
-from skimage import measure
 import itertools
+import random
+from bisect import bisect_left
+
+import numpy
+from PIL import Image
+from skimage import measure
 
 # Zoom zoom! ;)
 Crashes = ["HELP IM TRAPPED IN A COMMAND!",
@@ -147,7 +148,7 @@ def resizetosize(pilimage, maxwidth=None, maxheight=None):
     width = pilimage.size[0]
     height = pilimage.size[1]
     ratio = max(width / maxwidth, height / maxheight)
-    return pilimage.resize((width // ratio, height // ratio))
+    return pilimage.resize((int(width // ratio), int(height // ratio)))
 
 
 def createfillers(numpyarray):
@@ -188,13 +189,25 @@ def mapprops2color(props, original_numpyarray, image):
     data = []
     for x in props:
         x1, y1, x2, y2 = x.bbox
+        corner, w, h = bboxcorrectify(x1, y1, x2, y2)
         colorindex = original_numpyarray[x1][y1]
         # Workaround the limitation that you cant have transparency.
-        if rgbpalette[colorindex] == (1, 1, 1):
-            data.append(f'#000000|{x1},{y1}|{x2},{y2}|')
+        if w == 1 and h == 1:
+            pass
         else:
-            data.append(f"{gethex(rgbpalette[colorindex])}|{x1},{y1}|{x2},{y2}|")
+            if rgbpalette[colorindex] == (1, 1, 1):
+                data.append(f'#000000|{corner},{w},{h}|')
+            else:
+                data.append(f"{gethex(rgbpalette[colorindex])}|{corner},{w},{h}|")
     return data
+
+
+def bboxcorrectify(lowrow, lowcol, hirow, hicol):
+    height = hirow - lowrow
+    width = hicol - lowcol
+    if height < 0 or width < 0:
+        print("WARNING: Height and width is invalid!")
+    return f'{lowrow},{lowcol}', height, width
 
 
 def grouper(n, iterable, fillvalue=None):

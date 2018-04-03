@@ -23,7 +23,7 @@ def multiread(video):
 
 def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
     wrapperobject = MultiWriteGif(fp,
-                                  fps=readerobject.get_meta_data()['fps'], optimise=useinternal)
+                                  fps=int(round(readerobject.get_meta_data()['fps'])), optimise=useinternal)
 
     with tqdm.tqdm(desc="Images Extracted & Converted", total=readerobject.get_length(),
                    unit='frames') as bar:
@@ -34,7 +34,7 @@ def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
                 wrapperobject.adddata(image)
                 bar.update(1)
         except RuntimeError as e:
-            if 'frame' in e:
+            if 'frame' in str(e).lower():
                 print("WARN: Frame Error in reading Video. Silently discarding.")
                 wrapperobject.finish()
             else:
