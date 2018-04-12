@@ -1,29 +1,17 @@
-import socket
-
-import numpy
 import os
+import socket
 import time
-from PIL import Image
-import natsort
-import Utils
 import zlib
-from tqdm import tqdm
+import struct
+import natsort
+from PIL import Image
+
+import Utils
 
 
 def pairwise(t):
     it = iter(t)
     return zip(it, it)
-
-
-def gifyielder(gifpil, offset=1):
-    gifpil.seek(offset)
-    while gifpil.tell() != gifpil.n_frames:
-        yield gifpil
-        try:
-            gifpil.seek(gifpil.tell() + 1)
-        except EOFError:
-            gifpil.seek(0)
-            break
 
 
 def chunkifyfile(file, chunk_size=2048):
@@ -35,17 +23,17 @@ def chunkifyfile(file, chunk_size=2048):
 
 
 def preparevideo(gif):
-    videodata = []
     image = Image.open(gif)
-    initframe = Utils.processframe(image)
-    with tqdm(desc='Frames Done', total=image.n_frames) as pbar:
-        for frame in gifyielder(image):
-            videodata.append(Utils.processframe(frame))
-            pbar.update(1)
-    return initframe, videodata
+    for _ in range(image.n_frames):
+        yield Utils.processframe(image)
+        try:
+            image.seek(image.tell() + 1)
+        except EOFError:
+            image.seek(0)
+            break
 
 
-def waituntil(packet, waitsocket):
+def waituntil(packet, waitsocket, timeout=0.1):
     if packet is None:
         while True:
             buff = waitsocket.recv(1024)
@@ -62,27 +50,39 @@ def waituntil(packet, waitsocket):
 def packetbuilder(plist):
     """
     Optimise packet sizes and OC background changing
-    Optimisation: Reducing total count of background changes in a a frame.
+    Optimisation 1: Reducing total count of background changes in a a frame.
+    Optimisation 2: use struct packing
     :param plist:
     :return:
     """
+    # TODO: Make this work for structs.
     colorswaps = 0
     sortedlist = natsort.natsorted(plist)
-    currentcolor = '#000000'
+    currentcolor = '0x000000'
     listgrouped = []
     workinglist = []
-    for x in sortedlist:
-        color, bbox, _ = x.split('|')
+    # update is now a set.
+    for update in sortedlist:
+        color, x, y, height, width = update
+        x = str(x).zfill(3)
+        y = str(y).zfill(3)
+        h = str(height).zfill(3)
+        w = str(width).zfill(3)
         if color != currentcolor and workinglist != []:
-            listgrouped.append(f'{currentcolor}|{"|".join(workinglist)}')
+            # currentcolor, *workinglist
+            listgrouped.append(struct.pack(''.join(['<', '8s', '12s' * (len(workinglist))]),
+                                           currentcolor.encode(encoding='utf-8'), *workinglist))
             currentcolor = color
-            workinglist = []
+            # Reset and add it as well.
+            workinglist = [f"{x}{y}{h}{w}".encode(encoding='utf-8')]
             colorswaps += 1
         else:
-            workinglist.append(f'[{bbox}]')
+            workinglist.append(f"{x}{y}{h}{w}".encode(encoding='utf-8'))
     # flush working buffer.
-    listgrouped.append(f'{currentcolor}|{"|".join(workinglist)}')
-    return '/'.join(listgrouped), colorswaps
+    listgrouped.append(struct.pack(''.join(['<', '8s', '12s' * (len(workinglist))]),
+                                   currentcolor.encode(encoding='utf-8'), *workinglist))
+    del workinglist
+    return listgrouped
 
 
 class PacketHandler:
@@ -91,6 +91,7 @@ class PacketHandler:
     """
 
     def __init__(self, ipbind='0.0.0.0', portbind=25652, video='vesperia.gif', audio='vesperia.dfpwm'):
+
         self.bind_ip = ipbind
         self.bind_port = portbind
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -103,9 +104,7 @@ class PacketHandler:
         self.initframe = None
         self.updates = None
         self.audiopath = audio
-        # Client's Packet Size. Restricted by the Server.
-        self.clientsize = None
-        self.prep()
+        self.frames = preparevideo(self.video)
 
     def start(self):
         client_sock, address = self.server.accept()
@@ -116,38 +115,29 @@ class PacketHandler:
             try:
                 buffer = client_sock.recv(1024)
             except ConnectionResetError:
-                latency = time.time() - latency
-                print(f"Latency: {latency} [PingPong]")
                 print("Waiting for Connection: [Connection Reset]")
                 client_sock, address = self.server.accept()
                 print(f"Client connected: {address}")
                 buffer = client_sock.recv(1024)
             if buffer == b"READY":
-                print("Client is ready. Asking for Buffer sizes...")
-                client_sock.send(b"BSIZE?")
-                packetsize = waituntil(None, client_sock)
-                print(f"Recieved Requested Bffersize for frames: {int(packetsize.decode('utf-8'))}")
-                self.buffersize = int(packetsize.decode('utf-8'))
+                latency = time.time() - latency
+                print(f"Latency: {latency} [PingPong]")
             elif buffer == b"AUDIO":
-                print("Client Requested Audio.")
+                # TODO: DFPWM Surround Sound for OC support
+                print("Client Requested Audio file")
                 file = open(self.audiopath, 'rb')
                 readsize = waituntil(None, client_sock)
                 client_sock.send(str(os.path.getsize(self.audiopath)).encode('utf-8'))
                 for chunk in chunkifyfile(file, readsize):
                     client_sock.send(chunk)
-                print("Finished Sending packet waiting for confirmation.")
+                print("Finished Sending packets. Waiting for confirmation.")
                 waituntil(b"OK", client_sock)
                 print("Client Reports OK. Waiting for further instructions.")
             elif buffer == b"PACK":
                 print("Sending packet!")
                 if self.frame == 0:
                     client_sock.send(zlib.compress(self.initframe)[0])
-                    for x in self.updates[:self.frame + self.buffersize]:
-                        client_sock.send(zlib.compress(packetbuilder(x)[0]))
-                        waituntil(b"OK", client_sock)
-
-    def debugpacket(self):
-        return
-
-    def prep(self):
-        self.initframe, self.updates = preparevideo(self.video)
+                    for _ in range(self.frame, self.frame + self.buffersize):
+                        frame = next(self.frames)
+                        client_sock.send((b''.join(packetbuilder(frame))+b"|"))
+                    self.frame += self.buffersize

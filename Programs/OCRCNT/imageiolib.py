@@ -3,11 +3,17 @@ imageio lib
 """
 import os
 import sys
+
 import imageio
 import tqdm
-import traceback
 
 import Utils
+
+
+def getfps(gif):
+    reader = imageio.get_reader(gif, mode='I')
+    fps = reader.get_meta_data()['fps']
+    return fps
 
 
 def multiread(video):
@@ -23,7 +29,7 @@ def multiread(video):
 
 def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
     wrapperobject = MultiWriteGif(fp,
-                                  fps=int(round(readerobject.get_meta_data()['fps'])), optimise=useinternal)
+                                  fps=readerobject.get_meta_data()['fps'], optimise=useinternal)
 
     with tqdm.tqdm(desc="Images Extracted & Converted", total=readerobject.get_length(),
                    unit='frames') as bar:

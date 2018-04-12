@@ -1,11 +1,13 @@
 import itertools
 import random
+import struct
 from bisect import bisect_left
 
 import numpy
 from PIL import Image
 from skimage import measure
 
+structableobject = struct.Struct('8s9s')
 # Zoom zoom! ;)
 Crashes = ["HELP IM TRAPPED IN A COMMAND!",
            "O NO",
@@ -161,6 +163,7 @@ def createfillers(numpyarray):
     return properties
 
 
+# TODO: do not return strings. format them with structs later.
 def processframe(pilimage):
     """
     Generates all the required stuff ready with regionprops all correct.
@@ -180,36 +183,44 @@ def processframe(pilimage):
 def gethex(rgbtuple):
     # does not check. since all values should be in 0 to 255...
     # unless someone is being an idiot.
-    r, g, b = rgbtuple
-    return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+    return "{0:02x}{1:02x}{2:02x}".format(*rgbtuple)
 
 
-def mapprops2color(props, original_numpyarray, image):
-    rgbpalette = [x for x in grouper(3, image.getpalette())]
+def mapprops2color(props, original_numpyarray, mapimage):
+    rgbpalette = [x for x in grouper(3, mapimage.getpalette())]
     data = []
     for x in props:
         x1, y1, x2, y2 = x.bbox
-        corner, w, h = bboxcorrectify(x1, y1, x2, y2)
+        corner, corner2, w, h = bboxcorrectify(x1, y1, x2, y2)
         colorindex = original_numpyarray[x1][y1]
-        # Workaround the limitation that you cant have transparency.
+        # Ignore 1 width and 1 height pixels
         if w == 1 and h == 1:
             pass
         else:
+            # Workaround the limitation that you cant have transparency.
             if rgbpalette[colorindex] == (1, 1, 1):
-                data.append(f'#000000|{corner},{w},{h}|')
+                data.append((f'0x000000', corner, corner2, w, h))
             else:
-                data.append(f"{gethex(rgbpalette[colorindex])}|{corner},{w},{h}|")
+                data.append((f"0x{gethex(rgbpalette[colorindex])}", corner, corner2, w, h))
     return data
 
 
+# 1.73464 s [3824718 Hits]
 def bboxcorrectify(lowrow, lowcol, hirow, hicol):
-    height = hirow - lowrow
-    width = hicol - lowcol
-    if height < 0 or width < 0:
-        print("WARNING: Height and width is invalid!")
-    return f'{lowrow},{lowcol}', height, width
+    return lowrow, lowcol, hirow - lowrow, hicol - lowcol
 
 
+# Speed: 0.0361779 s [7916 Hits]
 def grouper(n, iterable, fillvalue=None):
     args = [iter(iterable)] * n
     return itertools.zip_longest(fillvalue=fillvalue, *args)
+
+
+# TODO Continue working on this.
+# Left: packetbuilder
+def structpack(data: tuple):
+    return structableobject.pack(f"{data[0]}".encode('utf-8'), data[1].encode('utf-8'))
+
+
+def structunpack(structbytes: bytes):
+    return structableobject.unpack(structbytes)

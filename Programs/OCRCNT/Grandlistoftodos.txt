@@ -1,0 +1,6 @@
+--- Stage 0: Hello World Again! ---
+- Complete Client.lua
+- Test base concept
+- Fix bugs.
+--- Stage 1: Yield this! ---
+- make video be yielding and imageiolib to allow to be ReadWrited
