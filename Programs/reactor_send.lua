@@ -1,52 +1,29 @@
 -- Require our components and libraries
 local component = require("component")
+local event = require("event")
 local GERTi = require("GERTiClient")
 local serialize = require("serialization")
 local reactor = component.br_reactor
-
--- Open socket to destination
-local socket = GERTi.openSocket("61d98b9e-a7fb-4695-a276-0a119f159763")
--- The main loop
-while true do
--- Amount of fuel in reactor
-local fuelAmount = math.ceil(reactor.getFuelAmount())
-print("Amount of fuel: "..fuelAmount.." mB")
--- Casing Temperature
-local caseTemp = math.ceil(reactor.getCasingTemperature())
-print("Casing temperature: "..caseTemp.. " C")
--- Core Temperature (Fuel)
-local coreTemp = math.ceil(reactor.getFuelTemperature())
-print("Core temperature: "..coreTemp.. " C")
--- Amount of water
-local curWater = math.ceil(reactor.getCoolantAmount())
-local maxWater = math.ceil(reactor.getCoolantAmountMax())
-print("Water: "..curWater.." / "..maxWater.." mB")
--- Amount of steam
-local curSteam = math.ceil(reactor.getHotFluidAmount())
-local maxSteam = math.ceil(reactor.getHotFluidAmountMax())
-print("Steam: "..curSteam.." / "..maxSteam.." mB")
--- Amount of hot fluid output
-local hotFluid = reactor.getHotFluidProducedLastTick()
-print("Hot Fluid Output: "..hotFluid.." mB/t")
--- Fuel burn rate
-local burnRate = reactor.getFuelConsumedLastTick()
-print("Fuel Burn Rate: "..burnRate.." mB/t")
-
--- Wrap all the variables into a table
-local info = {}
-info["fuelAmount"] = fuelAmount
-info["caseTemp"] = caseTemp
-info["coreTemp"] = coreTemp
-info["curWater"] = curWater
-info["maxWater"] = maxWater
-info["curSteam"] = curSteam
-info["maxSteam"] = maxSteam
-info["hotFluid"] = hotFluid
-info["burnRate"] = burnRate
-
--- serialize table and send it off
-
-socket:write(serialize.serialize(info))
-
-os.sleep(1)
+local socket = {}|
+-- Open socket to destination with automated destination selection to be clever
+if tonumber(GERTi.getAddress()) == 0.1 then
+	socket = GERTi.openSocket(0.2, false, 1)
+else
+	socket = GERTi.openSocket(0.1, false, 1)
 end
+
+local function sendInfo()
+	local info = {}
+	info["fuelAmount"] = math.ceil(reactor.getFuelAmount())
+	info["fuelMax"] = reactor.getFuelAmountMax()
+	info["caseTemp"] = math.ceil(reactor.getCasingTemperature())
+	info["coreTemp"] = math.ceil(reactor.getFuelTemperature())
+	info["burnRate"] = reactor.getFuelConsumedLastTick()
+	info["wasteAmount"] = reactor.getWasteAmount()
+	info["controlLevel"] = reactor.getControlRodsLevels()
+	info["energyProduced"] = reactor.getEnergyProducedLastTick()
+	info["energyStored"] = reactor.getEnergyStored()
+	info["fuelReactivity"] = reactor.getFuelReactivity()
+	socket:write(serialize.serialize(info))
+end
+event.timer(1, sendInfo, math.huge)
