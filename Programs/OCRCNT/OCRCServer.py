@@ -5,7 +5,7 @@ import zlib
 import struct
 import natsort
 from PIL import Image
-
+import sys
 import Utils
 
 
@@ -63,23 +63,24 @@ def packetbuilder(plist):
     workinglist = []
     # update is now a set.
     for update in sortedlist:
-        color, x, y, height, width = update
+        color, x, y, height, width, sb = update
         x = str(x).zfill(3)
         y = str(y).zfill(3)
         h = str(height).zfill(3)
         w = str(width).zfill(3)
+        sb = str(sb)
         if color != currentcolor and workinglist != []:
             # currentcolor, *workinglist
-            listgrouped.append(struct.pack(''.join(['<', '8s', '12s' * (len(workinglist))]),
+            listgrouped.append(struct.pack(''.join(['<', '8s', '13s' * (len(workinglist))]),
                                            currentcolor.encode(encoding='utf-8'), *workinglist))
             currentcolor = color
             # Reset and add it as well.
-            workinglist = [f"{x}{y}{h}{w}".encode(encoding='utf-8')]
+            workinglist = [f"{x}{y}{h}{w}{sb}".encode(encoding='utf-8')]
             colorswaps += 1
         else:
-            workinglist.append(f"{x}{y}{h}{w}".encode(encoding='utf-8'))
+            workinglist.append(f"{x}{y}{h}{w}{sb}".encode(encoding='utf-8'))
     # flush working buffer.
-    listgrouped.append(struct.pack(''.join(['<', '8s', '12s' * (len(workinglist))]),
+    listgrouped.append(struct.pack(''.join(['<', '8s', '13s' * (len(workinglist))]),
                                    currentcolor.encode(encoding='utf-8'), *workinglist))
     del workinglist
     return listgrouped
@@ -98,46 +99,69 @@ class PacketHandler:
         self.server.bind((self.bind_ip, self.bind_port))
         self.server.listen(5)
         # Client Requested BufferSize
-        self.buffersize = None
+        self.buffersize = 30
         self.frame = 0
         self.video = video
         self.initframe = None
         self.updates = None
         self.audiopath = audio
+        print("Preparing video...")
         self.frames = preparevideo(self.video)
+        print("Prep OK starting server...")
+        self.latency = 0
+        self.start()
 
-    def start(self):
+    def attemptconnect(self):
+        print("Waiting for Connection")
         client_sock, address = self.server.accept()
         print(f"Recieved connection from: {address}. Sending Server Info")
+        self.latency = time.time()
         client_sock.send(b"OCRCNT/1.0.0")
-        latency = time.time()
+        return client_sock.recv(1024)
+
+    def start(self):
+        print("Waiting for Connection")
+        client_sock, address = self.server.accept()
+        self.latency = time.time()
+        print(f"Recieved connection from: {address}. Sending Server Info")
+        client_sock.send(b"OCRCNT/1.0.0")
         while True:
             try:
                 buffer = client_sock.recv(1024)
-            except ConnectionResetError:
-                print("Waiting for Connection: [Connection Reset]")
-                client_sock, address = self.server.accept()
-                print(f"Client connected: {address}")
-                buffer = client_sock.recv(1024)
+            except ConnectionError:
+                buffer = self.attemptconnect()
+            print(buffer)
             if buffer == b"READY":
-                latency = time.time() - latency
-                print(f"Latency: {latency} [PingPong]")
+                self.latency = time.time() - self.latency
+                print(f"Latency: {self.latency} [PingPong]")
+            elif buffer == b"CAP":
+                # list cpabilities
+                client_sock.send(f"{1 if self.video else 0}{1 if self.audiopath else 0}".encode(encoding='utf-8'))
             elif buffer == b"AUDIO":
                 # TODO: DFPWM Surround Sound for OC support
                 print("Client Requested Audio file")
                 file = open(self.audiopath, 'rb')
-                readsize = waituntil(None, client_sock)
+                readsize = 2048
                 client_sock.send(str(os.path.getsize(self.audiopath)).encode('utf-8'))
+                waituntil(b"SEND", client_sock)
                 for chunk in chunkifyfile(file, readsize):
                     client_sock.send(chunk)
                 print("Finished Sending packets. Waiting for confirmation.")
                 waituntil(b"OK", client_sock)
                 print("Client Reports OK. Waiting for further instructions.")
-            elif buffer == b"PACK":
+            elif b"PACK" in buffer:
+                str(buffer)
                 print("Sending packet!")
-                if self.frame == 0:
-                    client_sock.send(zlib.compress(self.initframe)[0])
-                    for _ in range(self.frame, self.frame + self.buffersize):
-                        frame = next(self.frames)
-                        client_sock.send((b''.join(packetbuilder(frame))+b"|"))
-                    self.frame += self.buffersize
+                for _ in range(self.frame, self.frame + self.buffersize):
+                    frame = next(self.frames)
+                    client_sock.send((b''.join(packetbuilder(frame)) + b"|"))
+                    print(f"sent frame")
+                self.frame += self.buffersize
+            elif buffer == b'':
+                sys.exit(0)
+            else:
+                print(f"Unrecognised function: {buffer}")
+
+
+if __name__ == '__main__':
+    PacketHandler(video=sys.argv[1], audio=sys.argv[2], ipbind=sys.argv[3])

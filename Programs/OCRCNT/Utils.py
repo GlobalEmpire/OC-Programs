@@ -193,15 +193,15 @@ def mapprops2color(props, original_numpyarray, mapimage):
         x1, y1, x2, y2 = x.bbox
         corner, corner2, w, h = bboxcorrectify(x1, y1, x2, y2)
         colorindex = original_numpyarray[x1][y1]
-        # Ignore 1 width and 1 height pixels
         if w == 1 and h == 1:
-            pass
+            setbit = 1
         else:
-            # Workaround the limitation that you cant have transparency.
-            if rgbpalette[colorindex] == (1, 1, 1):
-                data.append((f'0x000000', corner, corner2, w, h))
-            else:
-                data.append((f"0x{gethex(rgbpalette[colorindex])}", corner, corner2, w, h))
+            setbit = 0
+        if rgbpalette[colorindex] == (1, 1, 1):
+            data.append((f'0x000000', corner, corner2, w, h, setbit))
+        else:
+            data.append((f"0x{gethex(rgbpalette[colorindex])}", corner, corner2, w, h, setbit))
+
     return data
 
 

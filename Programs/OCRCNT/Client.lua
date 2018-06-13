@@ -1,5 +1,7 @@
 local component = require("component")
+local computer = require("computer")
 local thread = require("thread")
+local term = require("term")
 local internet = component.internet
 local function testimport()
     return require("struct")
@@ -49,6 +51,22 @@ function string:split(sSeparator, nMax, bRegexp)
 
    return aRecord
 end
+
+function table.slice(tbl, first, last, step)
+  local sliced = {}
+
+  for i = first or 1, last or #tbl, step or 1 do
+    sliced[#sliced+1] = tbl[i]
+  end
+
+  return sliced
+end
+
+local function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
 -- End Utility functions
 
 -- Some checks
@@ -58,18 +76,8 @@ if not internet.isTcpEnabled() then
 end
 
 if params.n < 2 then
-  print("Usage: client (server address) (port) [buffered packets] [Packet Size]")
+  print("Usage: client (server address) (port) [skip audio]")
   os.exit(1)
-end
-
-if params[3] == nil then
-    print("Using default number of buffered packets: 12")
-    params[3] = 12
-end
-
-if params[4] == nil then
-    print("Using default PacketSize: 4096")
-    params[4] = 4096
 end
 
 local address, port = params[1], tonumber(params[2], 10)
@@ -81,15 +89,15 @@ end
 print("Connecting...")
 local socket = internet.connect(address, port)
 while true do
-    if internet.finishConnect() == true then
+    if socket.finishConnect() == true then
         break
     else
 
     end
 end
--- Reader functions
-local function read(timeout, ...)
-    local time = os.clock()
+
+function read(timeout, ...)
+    local time = computer.uptime()
   while true do
     local data, err=socket.read(...)
     if data == nil then
@@ -97,7 +105,7 @@ local function read(timeout, ...)
     elseif data ~= "" then
       return data
     else
-        if os.clock() - time > timeout and timeout ~= nil then
+        if timeout ~= nil and computer.uptime() - time > timeout then
             return false
         end
       os.sleep(0)
@@ -106,104 +114,153 @@ local function read(timeout, ...)
 end
 
 -- handler area
-
 local state = {mode="handshake"}
 local handler = {}
-local framebuffer = {}
 function handler.handshake()
     local data = read(nil)
     if data == "OCRCNT/1.0.0" then
         socket.write("READY")
     end
-    local bsize = read(nil)
-    if bsize == "BSIZE?" then
-        socket.write(params[3])
-    end
-    socket.write(hasdatacard)
+    state.mode = "getaudio"
+    return true
 end
 
 function handler.getaudio()
     print("Request Requesting Audio")
     socket.write("AUDIO")
     local filesize = read()
-    print("Tape File Size: " + filesize)
-    socket.write(params[4])
-    print("Writing to drive")
+    print(filesize)
+    if tape.getSize() < tonumber(filesize) then
+        print("Not enough space! Waiting for disk with appropriate size.")
+        while true do
+            os.sleep(1)
+            if tape.getSize() >= tonumber(filesize) then
+                break
+            end
+        end
+    end
+    print("Tape File Size: " .. tape.getSize())
+    socket.write("SEND")
+    local x, _  =term.getCursor()
+    local datasent = 0
+    term.write("Recieved data:" .. datasent .."/" .. filesize)
     tape.seek(-1000000000000)
     while true do
-        local data = read(20)
+        local data = read(5)
         if data == false then
             break
         else
             tape.write(data)
+            term.clearLine()
+            datasent = datasent + string.len(data)
+            term.write("Recieved data:" .. datasent .."/" .. filesize)
         end
     end
     socket.write("OK")
     print("Finished.")
+    state.mode = "play"
+    return true
 end
---[[TODO:
-    Well I need help:
-    Specificallay the area below.
-    This string of data will be sent:
-    b'0x000000035082001004...|'
-    All in 1 line.
-    at the end there is a pipe to determine the end of a frame.
-    I need help to make sure that:
-    framebuffer only gets 1 frame data per value.
-    you can implement it anyway you like. and if you want me to make any changes to my side, please let me know.
-    1 "Fill" command: "0x000000 035 082 001 004 100 122 031 014... 035 082 001 004"
-    --]]
 -- Frames Area [Getting frames etc...]
-local function datareaderstream(timeout)
-
+local framebuffer = {}
+-- Secondary buffer for rendering.
+local secondframebuff = {}
+local waiting = false
+local function datareaderstream()
     while true do
-        local data = read(timeout)
-        if data == false then
-            break
+        local data, err=socket.read(4096)
+        if data == nil or data == "" and waiting == false then
+            socket.write("PACK")
+            os.sleep(0.1)
+            waiting = true
         else
             framegetterbuffer = framegetterbuffer .. data
             local split = framegetterbuffer.split("|")
             for k,v in pairs(split) do
                 if next(split,k) == nil then
                     framegetterbuffer = v
+                    break
                 else
 
-                    print()
-                end
+                    table.insert(framebuffer,v)
                 end
             end
-    end
-    return framegetterbuffer
-end
-
-local function framegettr()
-    socket.write("PACK")
-    while true do
-        if framebuffer.len <=params[3] then
-            local framedat = datareaderstream(0.05)
-            if framedat == "" then
-                print("Server Went down. Get a more reliable host.")
-                os.exit(1)
-            else
-                framebuffer.insert()
-            end
+            waiting = false
         end
     end
 end
 
-
+local eof = false
 -- Render Thread now uses structs!
 local function render()
-    local frame = frames[1]
+    local frame = secondframebuff[1]
     local commands = frame.split("0x")
     for command in commands do
-        local instructions = struct.unpack('<c6'+'c12'*((command.len-6)/12),command)
+        local instructions = struct.unpack('<c6'+'c13'*((command.len-6)/12),command)
         --Set GPU color.
         gpu.setBackground(string.format("0x%s",instructions[1]))
         for i=2,#instructions do
-            gpu.fill(unpack(splitByChunk(i,3))," ")
+            local cm = splitByChunk(i,4)
+            local c = cm[4]
+            cm = table.remove(cm,4)
+            if c == 1 then
+                gpu.fill(table.unpack(cm)," ")
+            else
+                gpu.set(table.unpack(cm)," ")
+            end
         end
     end
+end
+
+-- Timer function to time updates
+
+local function timer()
+    local continue = true
+    while continue do
+        local ftick = 1
+        local dt = computer.uptime()
+        while true do
+            if tablelength(framebuffer) >= 15 then
+                -- We have enough frames. Move them to secondary framebuffer
+                secondframebuff = table.move(framebuffer,1,15,1,secondframebuff)
+                break
+            else
+                if eof then
+                    continue = false
+                end
+                -- not enough frames for a full second.. soo we wait.
+                os.sleep(0.05)
+            end
+        end
+        while true do
+            -- We are out of time for this second.
+            if computer.uptime() - dt <= 0 then
+                -- Empty 15 frame/sec buffer
+                secondframebuff = {}
+                break
+            end
+            if ftick == 16 then
+                -- We are early.. which is nice...
+                break
+            else
+                -- render frame. and delete it from 15frame/sec buffer
+                render()
+                ftick = ftick + 1
+            end
+            -- so that it doesnt look like we all at one shot just rendered it.
+            -- But it's the hard truth
+            os.sleep(0.005)
+        end
+    end
+    return true
+end
+
+function handler.play()
+    print("Start DRT")
+    drt = thread.create(datareaderstream)
+    print("Start Renderer")
+    renderer = thread.create(timer)
+    return false
 end
 
 while true do
@@ -212,7 +269,6 @@ while true do
     break
   end
 end
-
---Reset States [Stolen fron ICE2]
+thread.waitForAll({drt,renderer})
 gpu.setBackground(0x000000)
 gpu.setForeground(0xFFFFFF)

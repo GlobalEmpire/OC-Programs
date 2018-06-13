@@ -49,15 +49,17 @@ def main():
             print("Be sure to delete the \"gitpls\" file!")
             sys.exit()
         for x in videos:
+            a = os.path.join(os.getcwd(), 'videoinput',x)
             print(f"Prcoessing: {x}")
-            readerobject, fps, frames, name = imageiolib.multiread(os.path.join(os.getcwd(), 'videoinput', x))
+            subprocess.call(['ffmpeg', '-i', a, '-c', 'copy', '-c', 'copy', os.path.join(os.getcwd(), 'videoinput', f"active{x}")])
+            readerobject, fps, frames, name = imageiolib.multiread(os.path.join(os.getcwd(), 'videoinput', f"active{x}"))
             imageiolib.MultiWriteGifWrapper(readerobject, os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif"),
                                             True if gifsicleoptimise is 1 else False)
             subprocess.call([os.path.join(os.getcwd(), 'deps', 'gifsicle.exe'), '--optimize=3',
                              os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif"),
                              '-o', os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif")])
             print("Generating music DFPWM file. [May take a while depending on the kind of audio file.]")
-            subprocess.call(['ffmpeg', '-i', os.path.join(os.getcwd(), 'videoinput', x),
+            subprocess.call(['ffmpeg', '-i', os.path.join(os.getcwd(), 'videoinput', f"active{x}"),
                              os.path.join(os.getcwd(), 'workinginput', f'{name[0]}.wav')], stderr=subprocess.DEVNULL)
             subprocess.call(['java', '-jar', os.path.join(os.getcwd(), 'deps', 'LionRay.jar'),
                              os.path.join(os.getcwd(), 'workinginput', f'{name[0]}.wav'),
@@ -73,7 +75,7 @@ def main():
             azip.write(os.path.join(os.getcwd(), 'workinginput', "info.txt"), "info.txt")
             print("Cleaning up...")
             if deleteinputs:
-                os.remove(os.path.join(os.getcwd(), 'videoinput', x))
+                os.remove(os.path.join(os.getcwd(), 'videoinput', f"active{x}"))
                 print("deleting inputs...")
             for workingfile in os.listdir('workinginput'):
                 os.remove(os.path.join(os.getcwd(), 'workinginput', workingfile))
