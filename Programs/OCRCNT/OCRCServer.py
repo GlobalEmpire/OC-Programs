@@ -98,8 +98,6 @@ class PacketHandler:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.bind_ip, self.bind_port))
         self.server.listen(5)
-        # Client Requested BufferSize
-        self.buffersize = 30
         self.frame = 0
         self.video = video
         self.initframe = None
@@ -129,7 +127,7 @@ class PacketHandler:
             try:
                 buffer = client_sock.recv(1024)
             except ConnectionError:
-                buffer = self.attemptconnect()
+                sys.exit(1)
             print(buffer)
             if buffer == b"READY":
                 self.latency = time.time() - self.latency
@@ -152,11 +150,9 @@ class PacketHandler:
             elif b"PACK" in buffer:
                 str(buffer)
                 print("Sending packet!")
-                for _ in range(self.frame, self.frame + self.buffersize):
-                    frame = next(self.frames)
-                    client_sock.send((b''.join(packetbuilder(frame)) + b"|"))
-                    print(f"sent frame")
-                self.frame += self.buffersize
+                frame = next(self.frames)
+                client_sock.send((b''.join(packetbuilder(frame)) + b"|"))
+                print(f"sent frame")
             elif buffer == b'':
                 sys.exit(0)
             else:

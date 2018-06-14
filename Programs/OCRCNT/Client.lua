@@ -11,12 +11,12 @@ if structtest == false then
     print("failed to find struct dependancy!")
     os.exit(1)
 else
-    local struct = require("struct")
+    struct = require("struct")
 end
 local tape = component.tape_drive
 local gpu = component.gpu
 local params = table.pack(...)
-local framegetterbuffer = ""
+
 -- Utility Functions
 -- split by chunk
 local function splitByChunk(text, chunkSize)
@@ -27,30 +27,6 @@ local function splitByChunk(text, chunkSize)
     return s
 end
 -- Pythonic split
-function string:split(sSeparator, nMax, bRegexp)
-   assert(sSeparator ~= '')
-   assert(nMax == nil or nMax >= 1)
-
-   local aRecord = {}
-
-   if self:len() > 0 then
-      local bPlain = not bRegexp
-      nMax = nMax or -1
-
-      local nField, nStart = 1, 1
-      local nFirst,nLast = self:find(sSeparator, nStart, bPlain)
-      while nFirst and nMax ~= 0 do
-         aRecord[nField] = self:sub(nStart, nFirst-1)
-         nField = nField+1
-         nStart = nLast+1
-         nFirst,nLast = self:find(sSeparator, nStart, bPlain)
-         nMax = nMax-1
-      end
-      aRecord[nField] = self:sub(nStart)
-   end
-
-   return aRecord
-end
 
 function table.slice(tbl, first, last, step)
   local sliced = {}
@@ -95,6 +71,7 @@ while true do
 
     end
 end
+
 
 function read(timeout, ...)
     local time = computer.uptime()
@@ -166,6 +143,7 @@ local framebuffer = {}
 -- Secondary buffer for rendering.
 local secondframebuff = {}
 local waiting = false
+local framegetterbuffer = ""
 local function datareaderstream()
     while true do
         local data, err=socket.read(4096)
@@ -174,18 +152,12 @@ local function datareaderstream()
             os.sleep(0.1)
             waiting = true
         else
-            framegetterbuffer = framegetterbuffer .. data
-            local split = framegetterbuffer.split("|")
-            for k,v in pairs(split) do
-                if next(split,k) == nil then
-                    framegetterbuffer = v
-                    break
-                else
-
-                    table.insert(framebuffer,v)
-                end
+            if data == "" then
+                waiting=false
+                table.insert(framebuffer,framegetterbuffer)
+            else
+                framegetterbuffer = framegetterbuffer .. data
             end
-            waiting = false
         end
     end
 end
@@ -193,8 +165,9 @@ end
 local eof = false
 -- Render Thread now uses structs!
 local function render()
+    print("Rendering frame...")
     local frame = secondframebuff[1]
-    local commands = frame.split("0x")
+    local commands = string.gmatch(frame,"([^0x]+)")
     for command in commands do
         local instructions = struct.unpack('<c6'+'c13'*((command.len-6)/12),command)
         --Set GPU color.
@@ -210,6 +183,7 @@ local function render()
             end
         end
     end
+    table.remove(secondframebuff,1)
 end
 
 -- Timer function to time updates
@@ -218,20 +192,20 @@ local function timer()
     local continue = true
     while continue do
         local ftick = 1
-        local dt = computer.uptime()
         while true do
             if tablelength(framebuffer) >= 15 then
                 -- We have enough frames. Move them to secondary framebuffer
                 secondframebuff = table.move(framebuffer,1,15,1,secondframebuff)
                 break
             else
-                if eof then
+                if not eof then
                     continue = false
                 end
                 -- not enough frames for a full second.. soo we wait.
                 os.sleep(0.05)
             end
         end
+        local dt = computer.uptime()
         while true do
             -- We are out of time for this second.
             if computer.uptime() - dt <= 0 then
