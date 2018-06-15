@@ -151,7 +151,7 @@ class PacketHandler:
                 str(buffer)
                 print("Sending packet!")
                 frame = next(self.frames)
-                client_sock.send((b''.join(packetbuilder(frame)) + b"|"))
+                client_sock.send((b''.join(packetbuilder(frame))))
                 print(f"sent frame")
             elif buffer == b'':
                 sys.exit(0)

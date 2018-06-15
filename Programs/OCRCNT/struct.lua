@@ -191,7 +191,7 @@ function struct.unpack(format, stream)
     end
   end
 
-  return unpack(vars)
+  return vars
 end
 
 return struct

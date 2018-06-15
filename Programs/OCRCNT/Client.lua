@@ -6,14 +6,23 @@ local internet = component.internet
 local function testimport()
     return require("struct")
 end
+
 structtest,errormsg = pcall(testimport)
 if structtest == false then
     print("failed to find struct dependancy!")
     os.exit(1)
-else
-    struct = require("struct")
+-- Yes, like that.
+-- >
 end
-local tape = component.tape_drive
+local function ctape()
+    return require("component.tape_drive")
+end
+tape,errormsg = pcall(ctape)
+if tape == false then
+    local tape = false
+else
+    local tape = component.tape_drive
+end
 local gpu = component.gpu
 local params = table.pack(...)
 
@@ -27,6 +36,28 @@ local function splitByChunk(text, chunkSize)
     return s
 end
 -- Pythonic split
+local function extendstring(string,times)
+    while times > 0 do
+        string = string .. string
+        times = times - 1
+    end
+    return string
+end
+
+function split( string, inSplitPattern, outResults )
+  if not outResults then
+    outResults = { }
+  end
+  local theStart = 1
+  local theSplitStart, theSplitEnd = string.find( string, inSplitPattern, theStart )
+  while theSplitStart do
+    table.insert( outResults, string.sub( string, theStart, theSplitStart-1 ) )
+    theStart = theSplitEnd + 1
+    theSplitStart, theSplitEnd = string.find( string, inSplitPattern, theStart )
+  end
+  table.insert( outResults, string.sub( string, theStart ) )
+  return outResults
+end
 
 function table.slice(tbl, first, last, step)
   local sliced = {}
@@ -43,6 +74,14 @@ local function tablelength(T)
   for _ in pairs(T) do count = count + 1 end
   return count
 end
+
+-- TODO: IDEA: do not convert strings to hex. just use 0 padded ints
+local function tohex(str)
+    return (str:gsub('.', function (c)
+        return string.format('%02X', string.byte(c))
+    end))
+end
+
 -- End Utility functions
 
 -- Some checks
@@ -60,6 +99,11 @@ local address, port = params[1], tonumber(params[2], 10)
 if port == nil then
   print("Error: '" .. params[2] .. "' is not a number")
   os.exit(1)
+end
+if params[3] == nil then
+    params[3] = false
+else
+    params[3] = true
 end
 -- End checks.
 print("Connecting...")
@@ -98,7 +142,11 @@ function handler.handshake()
     if data == "OCRCNT/1.0.0" then
         socket.write("READY")
     end
-    state.mode = "getaudio"
+    if params[3] == false or tape ~= false then
+        state.mode = "getaudio"
+    else
+        state.mode = "play"
+    end
     return true
 end
 
@@ -139,102 +187,69 @@ function handler.getaudio()
     return true
 end
 -- Frames Area [Getting frames etc...]
-local framebuffer = {}
+framebuffer = {}
 -- Secondary buffer for rendering.
-local secondframebuff = {}
+secondframebuff = {}
 local waiting = false
-local framegetterbuffer = ""
-local function datareaderstream()
+framegetterbuffer = ""
+
+local function render(frame)
+    local commands = split(frame, "0x")
+    local commands2 = {}
+      for _,v in pairs(commands) do
+          if v == "" then
+          else
+            commands2[ #commands2+1 ] = v
+          end
+      end
+    for _, command in pairs(commands2) do
+        if command ~= nil then
+            local instructions = struct.unpack('<c6'..extendstring('c13',(string.len(command)-6)/12),command)
+            --Set GPU color.
+            gpu.setBackground(tonumber(string.format("0x%s",instructions[1])))
+
+            newinstructions = {}
+            for k,v in pairs(instructions) do
+                if v ~= "" then
+                    table.insert(newinstructions,v)
+                end
+            end
+            for i=2,#newinstructions do
+                local cm = splitByChunk(newinstructions[i],3)
+                local c = cm[5]
+                table.remove(cm,5)
+                local cm2 = {}
+                for k,v in pairs(cm) do
+                    table.insert(cm2,tonumber(v))
+                end
+                table.insert(cm2," ")
+                if c == 0 then
+                    gpu.fill(table.unpack(cm2))
+                else
+                    gpu.set(table.unpack(cm2))
+                end
+            end
+        end
+    end
+end
+
+function handler.play()
     while true do
         local data, err=socket.read(4096)
-        if data == nil or data == "" and waiting == false then
+        if data == "" and waiting == false then
             socket.write("PACK")
-            os.sleep(0.1)
             waiting = true
+            os.sleep(0.01)
         else
-            if data == "" then
+            if data == "" and framegetterbuffer ~= "" then
                 waiting=false
-                table.insert(framebuffer,framegetterbuffer)
+                render(framegetterbuffer)
+                framegetterbuffer = ""
             else
                 framegetterbuffer = framegetterbuffer .. data
             end
         end
     end
-end
-
-local eof = false
--- Render Thread now uses structs!
-local function render()
-    print("Rendering frame...")
-    local frame = secondframebuff[1]
-    local commands = string.gmatch(frame,"([^0x]+)")
-    for command in commands do
-        local instructions = struct.unpack('<c6'+'c13'*((command.len-6)/12),command)
-        --Set GPU color.
-        gpu.setBackground(string.format("0x%s",instructions[1]))
-        for i=2,#instructions do
-            local cm = splitByChunk(i,4)
-            local c = cm[4]
-            cm = table.remove(cm,4)
-            if c == 1 then
-                gpu.fill(table.unpack(cm)," ")
-            else
-                gpu.set(table.unpack(cm)," ")
-            end
-        end
-    end
-    table.remove(secondframebuff,1)
-end
-
--- Timer function to time updates
-
-local function timer()
-    local continue = true
-    while continue do
-        local ftick = 1
-        while true do
-            if tablelength(framebuffer) >= 15 then
-                -- We have enough frames. Move them to secondary framebuffer
-                secondframebuff = table.move(framebuffer,1,15,1,secondframebuff)
-                break
-            else
-                if not eof then
-                    continue = false
-                end
-                -- not enough frames for a full second.. soo we wait.
-                os.sleep(0.05)
-            end
-        end
-        local dt = computer.uptime()
-        while true do
-            -- We are out of time for this second.
-            if computer.uptime() - dt <= 0 then
-                -- Empty 15 frame/sec buffer
-                secondframebuff = {}
-                break
-            end
-            if ftick == 16 then
-                -- We are early.. which is nice...
-                break
-            else
-                -- render frame. and delete it from 15frame/sec buffer
-                render()
-                ftick = ftick + 1
-            end
-            -- so that it doesnt look like we all at one shot just rendered it.
-            -- But it's the hard truth
-            os.sleep(0.005)
-        end
-    end
-    return true
-end
-
-function handler.play()
-    print("Start DRT")
-    drt = thread.create(datareaderstream)
-    print("Start Renderer")
-    renderer = thread.create(timer)
-    return false
 end
 
 while true do
