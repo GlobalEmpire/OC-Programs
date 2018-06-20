@@ -42,7 +42,7 @@ Choose one:
 #### Thanks to:  
 ![](https://i.imgur.com/nciW9k0.png)
 - **20KDC** [Rewriting of original implementation]
-- **Payonel**t [Original OCRC client]
+- **Payonel** [Original OCRC client]
 
 #### Licensing  
 <a href="http://www.wtfpl.net/"><img
