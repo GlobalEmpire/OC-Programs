@@ -43,3 +43,6 @@ Choose one:
 ![](https://i.imgur.com/nciW9k0.png)
 - **20KDC** [Rewriting of original implementation]
 - **Payonel**t [Original OCRC client]
+
+#### Licensing  
+[![WTFPL][http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl.svg]][http://www.wtfpl.net/faq/]
