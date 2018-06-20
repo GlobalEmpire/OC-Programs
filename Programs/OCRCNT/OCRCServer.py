@@ -1,11 +1,12 @@
 import os
 import socket
-import time
-import zlib
 import struct
+import sys
+import time
+
 import natsort
 from PIL import Image
-import sys
+
 import Utils
 
 
@@ -55,33 +56,33 @@ def packetbuilder(plist):
     :param plist:
     :return:
     """
-    # TODO: Make this work for structs.
     colorswaps = 0
     sortedlist = natsort.natsorted(plist)
-    currentcolor = '0x000000'
+    currentcolor = '000'
     listgrouped = []
     workinglist = []
     # update is now a set.
     for update in sortedlist:
         color, x, y, height, width, sb = update
-        x = str(x).zfill(3)
-        y = str(y).zfill(3)
+        color = Utils.colorcompat(color)
+        x = str(x+1).zfill(3)
+        y = str(y+1).zfill(3)
         h = str(height).zfill(3)
         w = str(width).zfill(3)
         sb = str(sb)
         if color != currentcolor and workinglist != []:
             # currentcolor, *workinglist
-            listgrouped.append(struct.pack(''.join(['<', '8s', '13s' * (len(workinglist))]),
-                                           currentcolor.encode(encoding='utf-8'), *workinglist))
+            listgrouped.append(struct.pack(''.join(['<', '3s', '13s' * (len(workinglist))]),
+                                           currentcolor.encode(encoding='utf-8'), *workinglist) + b"|")
             currentcolor = color
             # Reset and add it as well.
-            workinglist = [f"{x}{y}{h}{w}{sb}".encode(encoding='utf-8')]
+            workinglist = [f"{x}{y}{w}{h}{sb}".encode(encoding='utf-8')]
             colorswaps += 1
         else:
-            workinglist.append(f"{x}{y}{h}{w}{sb}".encode(encoding='utf-8'))
+            workinglist.append(f"{x}{y}{w}{h}{sb}".encode(encoding='utf-8'))
     # flush working buffer.
-    listgrouped.append(struct.pack(''.join(['<', '8s', '13s' * (len(workinglist))]),
-                                   currentcolor.encode(encoding='utf-8'), *workinglist))
+    listgrouped.append(struct.pack(''.join(['<', '3s', '13s' * (len(workinglist))]),
+                                   currentcolor.encode(encoding='utf-8'), *workinglist) + b"|")
     del workinglist
     return listgrouped
 
@@ -127,7 +128,7 @@ class PacketHandler:
             try:
                 buffer = client_sock.recv(1024)
             except ConnectionError:
-                sys.exit(1)
+                break
             print(buffer)
             if buffer == b"READY":
                 self.latency = time.time() - self.latency
@@ -148,16 +149,19 @@ class PacketHandler:
                 waituntil(b"OK", client_sock)
                 print("Client Reports OK. Waiting for further instructions.")
             elif b"PACK" in buffer:
-                str(buffer)
-                print("Sending packet!")
                 frame = next(self.frames)
-                client_sock.send((b''.join(packetbuilder(frame))))
-                print(f"sent frame")
+                packet = b''.join(packetbuilder(frame))
+                client_sock.send(packet)
+
             elif buffer == b'':
-                sys.exit(0)
+                break
             else:
                 print(f"Unrecognised function: {buffer}")
 
 
 if __name__ == '__main__':
-    PacketHandler(video=sys.argv[1], audio=sys.argv[2], ipbind=sys.argv[3])
+    while True:
+        try:
+            PacketHandler(video=sys.argv[1], audio=sys.argv[2], ipbind=sys.argv[3])
+        except KeyboardInterrupt:
+            break

@@ -3,46 +3,28 @@ local computer = require("computer")
 local thread = require("thread")
 local term = require("term")
 local internet = component.internet
-local function testimport()
-    return require("struct")
-end
-
-structtest,errormsg = pcall(testimport)
-if structtest == false then
-    print("failed to find struct dependancy!")
-    os.exit(1)
--- Yes, like that.
--- >
-end
 local function ctape()
-    return require("component.tape_drive")
+  return require("component.tape_drive")
 end
 tape,errormsg = pcall(ctape)
 if tape == false then
-    local tape = false
+  tape = false
 else
-    local tape = component.tape_drive
+  tape = component.tape_drive
 end
 local gpu = component.gpu
 local params = table.pack(...)
 
 -- Utility Functions
--- split by chunk
+-- split by chunk and convert to number
 local function splitByChunk(text, chunkSize)
-    local s = {}
-    for i=1, #text, chunkSize do
-        s[#s+1] = tonumber(text:sub(i,i+chunkSize - 1))
-    end
-    return s
+  local s = {}
+  for i=1, #text, chunkSize do
+    s[#s+1] = assert(tonumber(text:sub(i,i+chunkSize - 1)), "Invalid packet '" .. text .. "'")
+  end
+  return s
 end
 -- Pythonic split
-local function extendstring(string,times)
-    while times > 0 do
-        string = string .. string
-        times = times - 1
-    end
-    return string
-end
 
 function split( string, inSplitPattern, outResults )
   if not outResults then
@@ -59,6 +41,34 @@ function split( string, inSplitPattern, outResults )
   return outResults
 end
 
+
+
+local function cliunpack(clistring)
+  local returntable = {}
+  local hexstring = ""
+  table.insert(returntable,string.sub(clistring,1,3))
+  hexstring = ""
+  local count = (#clistring - 3 )/ 13
+  for i = 0,count do
+    local curindex = i*13
+    local sub = string.sub(clistring,curindex+4,curindex+13+4)
+    if sub ~= "" then
+      table.insert(returntable,sub)
+    end
+  end
+  return returntable
+end
+
+local r = {"00","33","66","99","cc","ff"}
+local g = {"00","24","49","6d","92","b6","db","ff"}
+local b = {"00","40","80","c0","ff"}
+
+local function hexunpack(hstring)
+  local t = {}
+  string.gsub(hstring,".", function (c) table.insert(t,c) end)
+  return r[tonumber(t[1])+1]..g[tonumber(t[2])+1]..b[tonumber(t[3])+1]
+end
+
 function table.slice(tbl, first, last, step)
   local sliced = {}
 
@@ -67,19 +77,6 @@ function table.slice(tbl, first, last, step)
   end
 
   return sliced
-end
-
-local function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
-
--- TODO: IDEA: do not convert strings to hex. just use 0 padded ints
-local function tohex(str)
-    return (str:gsub('.', function (c)
-        return string.format('%02X', string.byte(c))
-    end))
 end
 
 -- End Utility functions
@@ -101,24 +98,23 @@ if port == nil then
   os.exit(1)
 end
 if params[3] == nil then
-    params[3] = false
+  params[3] = false
 else
-    params[3] = true
+  params[3] = true
 end
 -- End checks.
 print("Connecting...")
 local socket = internet.connect(address, port)
 while true do
-    if socket.finishConnect() == true then
-        break
-    else
+  if socket.finishConnect() == true then
+    break
+  else
 
-    end
+  end
 end
 
-
 function read(timeout, ...)
-    local time = computer.uptime()
+  local time = computer.uptime()
   while true do
     local data, err=socket.read(...)
     if data == nil then
@@ -126,9 +122,9 @@ function read(timeout, ...)
     elseif data ~= "" then
       return data
     else
-        if timeout ~= nil and computer.uptime() - time > timeout then
-            return false
-        end
+      if timeout ~= nil and computer.uptime() - time > timeout then
+        return false
+      end
       os.sleep(0)
     end
   end
@@ -138,120 +134,123 @@ end
 local state = {mode="handshake"}
 local handler = {}
 function handler.handshake()
-    local data = read(nil)
-    if data == "OCRCNT/1.0.0" then
-        socket.write("READY")
-    end
-    if params[3] == false or tape ~= false then
-        state.mode = "getaudio"
-    else
-        state.mode = "play"
-    end
-    return true
+  local data = read(nil)
+  if data == "OCRCNT/1.0.0" then
+    socket.write("READY")
+  end
+  if params[3] == false or tape ~= false then
+    state.mode = "getaudio"
+  else
+    state.mode = "play"
+  end
+  return true
 end
 
 function handler.getaudio()
-    print("Request Requesting Audio")
-    socket.write("AUDIO")
-    local filesize = read()
-    print(filesize)
-    if tape.getSize() < tonumber(filesize) then
-        print("Not enough space! Waiting for disk with appropriate size.")
-        while true do
-            os.sleep(1)
-            if tape.getSize() >= tonumber(filesize) then
-                break
-            end
-        end
-    end
-    print("Tape File Size: " .. tape.getSize())
-    socket.write("SEND")
-    local x, _  =term.getCursor()
-    local datasent = 0
-    term.write("Recieved data:" .. datasent .."/" .. filesize)
-    tape.seek(-1000000000000)
+  print("Request Requesting Audio")
+  socket.write("AUDIO")
+  local filesize = read()
+  print(filesize)
+  if tape.getSize() < tonumber(filesize) then
+    print("Not enough space! Waiting for disk with appropriate size.")
     while true do
-        local data = read(5)
-        if data == false then
-            break
-        else
-            tape.write(data)
-            term.clearLine()
-            datasent = datasent + string.len(data)
-            term.write("Recieved data:" .. datasent .."/" .. filesize)
-        end
+      os.sleep(1)
+      if tape.getSize() >= tonumber(filesize) then
+        break
+      end
     end
-    socket.write("OK")
-    print("Finished.")
-    state.mode = "play"
-    return true
+  end
+  print("Tape File Size: " .. tape.getSize())
+  socket.write("SEND")
+  local x, _  =term.getCursor()
+  local datasent = 0
+  term.write("Recieved data:" .. datasent .."/" .. filesize)
+  tape.seek(-1000000000000)
+  while true do
+    local data = read(5)
+    if data == false then
+      break
+    else
+      tape.write(data)
+      term.clearLine()
+      datasent = datasent + string.len(data)
+      term.write("Recieved data:" .. datasent .."/" .. filesize)
+    end
+  end
+  socket.write("OK")
+  print("Finished.")
+  state.mode = "play"
+  return true
 end
+
 -- Frames Area [Getting frames etc...]
-framebuffer = {}
--- Secondary buffer for rendering.
-secondframebuff = {}
 local waiting = false
 framegetterbuffer = ""
 
 local function render(frame)
-    local commands = split(frame, "0x")
-    local commands2 = {}
-      for _,v in pairs(commands) do
-          if v == "" then
-          else
-            commands2[ #commands2+1 ] = v
-          end
-      end
-    for _, command in pairs(commands2) do
-        if command ~= nil then
-            local instructions = struct.unpack('<c6'..extendstring('c13',(string.len(command)-6)/12),command)
-            --Set GPU color.
-            gpu.setBackground(tonumber(string.format("0x%s",instructions[1])))
-
-            newinstructions = {}
-            for k,v in pairs(instructions) do
-                if v ~= "" then
-                    table.insert(newinstructions,v)
-                end
-            end
-            for i=2,#newinstructions do
-                local cm = splitByChunk(newinstructions[i],3)
-                local c = cm[5]
-                table.remove(cm,5)
-                local cm2 = {}
-                for k,v in pairs(cm) do
-                    table.insert(cm2,tonumber(v))
-                end
-                table.insert(cm2," ")
-                if c == 0 then
-                    gpu.fill(table.unpack(cm2))
-                else
-                    gpu.set(table.unpack(cm2))
-                end
-            end
+  local commands = split(frame, "|")
+  -- This covers remaining data that may not be complete yet.
+  local lastCmd = table.remove(commands, #commands)
+  for _, command in pairs(commands) do
+    if command ~= nil then
+      local instructions = cliunpack(command)
+      -- Result starts with the 3-byte gpucol (semi-compressed GPU colour)
+      --Set GPU color.
+      local gpuCol = table.remove(instructions, 1)
+      gpu.setBackground(tonumber(string.format("0x%s",hexunpack(gpuCol))))
+      -- The rest of what follows is 13-byte instruction data,
+      --  until '|' is hit which separates the instructions.
+      -- This instruction data is split into 3s.
+      -- 3 6 9 12 13
+      -- 1 2 3 4  5
+      -- Format:
+      -- 1/2/3/4 : X Y W H
+      -- 5 : 'S/F' Bit - "0" if false, "1" if true.
+      -- The arrangement results as follows:
+      -- fill X Y W H " "
+      -- set X Y " "
+      for _, instr in ipairs(instructions) do
+        -- NOTE: tonumbers all the things
+        local cm = splitByChunk(instr,3)
+        assert(#cm == 5, "Packet format incorrect")
+        local c = table.remove(cm,5)
+        table.insert(cm, " ")
+        if c == 0 then
+          gpu.fill(table.unpack(cm))
+        else
+          -- 'Use Set' bit.
+          -- Seems to be to reduce GPU call cost -
+          --  unsure of actual effect
+          table.remove(cm,3)
+          table.remove(cm,3)
+          gpu.set(table.unpack(cm))
         end
+      end
     end
+  end
+  return lastCmd
 end
 
 function handler.play()
-    while true do
-        local data, err=socket.read(4096)
-        if data == "" and waiting == false then
-            socket.write("PACK")
-            waiting = true
-            os.sleep(0.01)
+  while true do
+    local data, err=socket.read(4096)
+    assert(data, err or "The connection naturally closed.")
+    if data == "" and waiting == false then
+      socket.write("PACK")
+      waiting = true
+      os.sleep(0.01)
+    else
+      if data == "" and framegetterbuffer ~= "" then
+        waiting=false
+        if framegetterbuffer:find("|", 1, true) then
+          framegetterbuffer = render(framegetterbuffer)
         else
-            if data == "" and framegetterbuffer ~= "" then
-                waiting=false
-                render(framegetterbuffer)
-                framegetterbuffer = ""
-            else
-                framegetterbuffer = framegetterbuffer .. data
-            end
+          framegetterbuffer = framegetterbuffer .. data
         end
+      end
     end
+  end
 end
-
 while true do
   print(state.mode)
   if not handler[state.mode]() then

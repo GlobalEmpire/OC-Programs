@@ -38,3 +38,8 @@ Choose one:
 - OC: What? you mad bro?
 ### Usage
 - TODO
+
+#### Thanks to:  
+![](https://i.imgur.com/nciW9k0.png)
+- **20KDC** [Rewriting of original implementation]
+- **Payonel**t [Original OCRC client]

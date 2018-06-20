@@ -1,5 +1,5 @@
 import functools
-
+from PIL import Image
 import time
 
 

@@ -6,7 +6,6 @@ from bisect import bisect_left
 import numpy
 from PIL import Image
 from skimage import measure
-
 structableobject = struct.Struct('8s9s')
 # Zoom zoom! ;)
 Crashes = ["HELP IM TRAPPED IN A COMMAND!",
@@ -158,7 +157,7 @@ def createfillers(numpyarray):
     :param numpyarray:
     :return:
     """
-    labelarray, count = measure.label(numpyarray, connectivity=None, return_num=True)
+    labelarray, count = measure.label(numpyarray, connectivity=1, return_num=True,neighbors=4)
     properties = measure.regionprops(labelarray)
     return properties
 
@@ -224,3 +223,15 @@ def structpack(data: tuple):
 
 def structunpack(structbytes: bytes):
     return structableobject.unpack(structbytes)
+
+
+rcompat = ['00', '33', '66', '99', 'cc', 'ff']
+gcompat = ['00', '24', '49', '6d', '92', 'b6', 'db', 'ff']
+bcompat = ['00', '40', '80', 'c0', 'ff']
+
+
+def colorcompat(RGBString: str):
+    chunks = [RGBString[i:i + 2] for i in range(0, len(RGBString), 2)]
+    chunks.pop(0)
+    print(RGBString)
+    return f"{rcompat.index(chunks[0])}{gcompat.index(chunks[1])}{bcompat.index(chunks[2])}"
