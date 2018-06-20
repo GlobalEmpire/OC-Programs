@@ -45,4 +45,4 @@ Choose one:
 - **Payonel**t [Original OCRC client]
 
 #### Licensing  
-[!(WTFPL)[http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl.svg]][http://www.wtfpl.net/faq/]
+[![License](http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl.svg)](http://www.wtfpl.net/faq/)
