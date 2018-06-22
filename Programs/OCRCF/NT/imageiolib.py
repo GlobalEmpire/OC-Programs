@@ -7,7 +7,7 @@ import sys
 import imageio
 import tqdm
 
-import Utils
+from NT import Utils
 
 
 def getfps(gif):

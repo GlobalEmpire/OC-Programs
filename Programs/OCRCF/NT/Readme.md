@@ -12,8 +12,6 @@ If you just started using OpenComputers:
 - Encoding wise: Video to a gif  
 [Decent, ~65FPS gifs at OC palette and resolution]  
 Sample:  
-- First Version **[4MB]**:  
-![Gifs Yo!](https://i.imgur.com/VmRIlZz.gif)  
 - Revised **[3MB]**:  
 ![Gifs Yo!](https://i.imgur.com/JalHenp.gif)   
 [This might be in a short loop. If so, click on it!]  

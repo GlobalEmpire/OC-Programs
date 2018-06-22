@@ -1,4 +1,4 @@
-# OCRC
+# OCRC [Classic]
 OpenComputersRapidCRAM Technology [Video Streaming Like [ICE2](https://github.com/ChenThread/ice2)]
 - Thanks to [gamax92](https://github.com/gamax92) for coding much of the lua script!
 

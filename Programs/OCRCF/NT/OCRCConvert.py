@@ -2,10 +2,9 @@ import os
 import subprocess
 import sys
 import zipfile
-import Utils
 import traceback
 import imageio
-import imageiolib
+from NT import imageiolib
 
 print("Checking and Installing \"colorama\".")
 try:

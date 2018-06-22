@@ -7,7 +7,7 @@ import time
 import natsort
 from PIL import Image
 
-import Utils
+from NT import Utils
 
 
 def pairwise(t):
@@ -115,7 +115,7 @@ class PacketHandler:
         client_sock, address = self.server.accept()
         print(f"Recieved connection from: {address}. Sending Server Info")
         self.latency = time.time()
-        client_sock.send(b"OCRCNT/1.0.0")
+        client_sock.send(b"OCRCF/1.0.0")
         return client_sock.recv(1024)
 
     def start(self):
@@ -123,7 +123,7 @@ class PacketHandler:
         client_sock, address = self.server.accept()
         self.latency = time.time()
         print(f"Recieved connection from: {address}. Sending Server Info")
-        client_sock.send(b"OCRCNT/1.0.0")
+        client_sock.send(b"OCRCF/1.0.0")
         while True:
             try:
                 buffer = client_sock.recv(1024)
