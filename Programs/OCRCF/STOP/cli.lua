@@ -2,6 +2,7 @@
 -- Original by Ristellise
 -- Edited by 20KDC
 -- Originally licensed by WTFPL. Relicensed to CC0
+
 local component = require("component")
 local computer = require("computer")
 local thread = require("thread")
