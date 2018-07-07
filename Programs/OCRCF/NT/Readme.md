@@ -12,6 +12,8 @@ If you just started using OpenComputers:
 - Encoding wise: Video to a gif  
 [Decent, ~65FPS gifs at OC palette and resolution]  
 Sample:  
+- First Version **[4MB]**:  
+![Gifs Yo!](https://i.imgur.com/VmRIlZz.gif)  
 - Revised **[3MB]**:  
 ![Gifs Yo!](https://i.imgur.com/JalHenp.gif)   
 [This might be in a short loop. If so, click on it!]  
@@ -40,9 +42,4 @@ Choose one:
 #### Thanks to:  
 ![](https://i.imgur.com/nciW9k0.png)
 - **20KDC** [Rewriting of original implementation]
-- **Payonel** [Original OCRC client]
-
-#### Licensing  
-<a href="http://www.wtfpl.net/"><img
-       src="http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-4.png"
-       width="80" height="15" alt="WTFPL" /></a>
+- **Payonel**t [Original OCRC client]

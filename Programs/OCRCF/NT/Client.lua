@@ -4,7 +4,7 @@ local thread = require("thread")
 local term = require("term")
 local internet = component.internet
 --Versiongstring--
-local version = "OCRCF/1.0.0"
+local version = "OCRCNT/1.0.0"
 ------------------
 local function ctape()
     return require("component").tape_drive

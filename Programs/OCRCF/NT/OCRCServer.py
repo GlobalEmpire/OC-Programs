@@ -3,11 +3,17 @@ import socket
 import struct
 import sys
 import time
-
+import constantsstring
 import natsort
 from PIL import Image
 
-from NT import Utils
+import Utils
+
+simulate = True
+if simulate:
+    import debugging
+
+    renderinstance = debugging.tkinterrenderer()
 
 
 def pairwise(t):
@@ -65,8 +71,8 @@ def packetbuilder(plist):
     for update in sortedlist:
         color, x, y, height, width, sb = update
         color = Utils.colorcompat(color)
-        x = str(x+1).zfill(3)
-        y = str(y+1).zfill(3)
+        x = str(x).zfill(3)
+        y = str(y).zfill(3)
         h = str(height).zfill(3)
         w = str(width).zfill(3)
         sb = str(sb)
@@ -87,13 +93,33 @@ def packetbuilder(plist):
     return listgrouped
 
 
+def unpackpacket(packet: bytes):
+    packets = packet.split(b"|")
+
+    for packet in packets:
+        if packet == b'':
+            pass
+        else:
+            data = struct.unpack(''.join(['<', '3s', '13s' * ((len(packet) - 3) // 13)]), packet)
+            color = Utils.depress(data[0])
+            for call in data[1:-1]:
+                callsplit = [int(call[i:i + 3].decode()) for i in range(0, len(call), 3)]
+                print(callsplit)
+                if callsplit[-1] == 0:
+                    renderinstance.fill(color, callsplit[0], callsplit[1], callsplit[2], callsplit[3])
+                    renderinstance.refresh()
+                elif callsplit[-1] == 1:
+                    renderinstance.pixel(color, callsplit[0], callsplit[1])
+                    renderinstance.refresh()
+
 class PacketHandler:
     """
     Main Packet Handling. aka Server to Client interaction.
     """
 
-    def __init__(self, ipbind='0.0.0.0', portbind=25652, video='vesperia.gif', audio='vesperia.dfpwm'):
-
+    def __init__(self, ipbind='0.0.0.0', portbind=25652, video='vesperia.gif', audio='vesperia.dfpwm',
+                 packetsimulate=simulate):
+        self.simulate = packetsimulate
         self.bind_ip = ipbind
         self.bind_port = portbind
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,22 +134,42 @@ class PacketHandler:
         self.frames = preparevideo(self.video)
         print("Prep OK starting server...")
         self.latency = 0
-        self.start()
+        if not self.simulate:
+            self.start()
+        else:
+            self.sendpacket()
 
     def attemptconnect(self):
         print("Waiting for Connection")
         client_sock, address = self.server.accept()
         print(f"Recieved connection from: {address}. Sending Server Info")
         self.latency = time.time()
-        client_sock.send(b"OCRCF/1.0.0")
+        client_sock.send(b"")
         return client_sock.recv(1024)
+
+    def sendpacket(self, client_sock=None):
+        # Delta time targetting.
+        dttarget = 0.2
+        for frame in self.frames:
+            packet = b''.join(packetbuilder(frame))
+            if client_sock is None and simulate:
+                unpackpacket(packet)
+            elif client_sock is not None and not simulate:
+                client_sock.send(packet)
+            else:
+                raise ValueError(f"Client Sock is {'Active' if client_sock else 'Inactive'}")
+            timethen = time.clock()
+            while True:
+                time.sleep(0.01)
+                if time.clock() - timethen >= dttarget:
+                    break
 
     def start(self):
         print("Waiting for Connection")
         client_sock, address = self.server.accept()
         self.latency = time.time()
         print(f"Recieved connection from: {address}. Sending Server Info")
-        client_sock.send(b"OCRCF/1.0.0")
+        client_sock.send(constantsstring.versionbytes)
         while True:
             try:
                 buffer = client_sock.recv(1024)
@@ -149,10 +195,7 @@ class PacketHandler:
                 waituntil(b"OK", client_sock)
                 print("Client Reports OK. Waiting for further instructions.")
             elif b"PACK" in buffer:
-                frame = next(self.frames)
-                packet = b''.join(packetbuilder(frame))
-                client_sock.send(packet)
-
+                self.sendpacket(client_sock)
             elif buffer == b'':
                 break
             else:

@@ -2,11 +2,13 @@ import itertools
 import random
 import struct
 from bisect import bisect_left
-
+import scipy.ndimage.measurements
 import numpy
 from PIL import Image
 from skimage import measure
+
 structableobject = struct.Struct('8s9s')
+
 # Zoom zoom! ;)
 Crashes = ["HELP IM TRAPPED IN A COMMAND!",
            "O NO",
@@ -121,9 +123,10 @@ def takeclosest(takecloselist, takecloseint):
 
 def quantizetopalette(silf, palette):
     """Convert an RGB or L mode image to use a given P image's palette."""
-
-    silf.load()
-
+    try:
+        silf.load()
+    except Exception:
+        silf = correcttopil(silf)
     # use palette from reference image
     palette.load()
     if palette.mode != "P":
@@ -144,12 +147,18 @@ def applypilpalette(pilimage):
 def resizetosize(pilimage, maxwidth=None, maxheight=None):
     if maxwidth is None or maxheight is None:
         # 160, starting from 1. soo conpensation.
-        maxheight = 49
-        maxwidth = 159
+        # 1920 1080
+        maxwidth = 160
+        maxheight = 100
     width = pilimage.size[0]
     height = pilimage.size[1]
     ratio = max(width / maxwidth, height / maxheight)
     return pilimage.resize((int(width // ratio), int(height // ratio)))
+
+
+structure = [[0, 0, 0],
+             [1, 1, 1],
+             [0, 0, 0]]
 
 
 def createfillers(numpyarray):
@@ -157,7 +166,7 @@ def createfillers(numpyarray):
     :param numpyarray:
     :return:
     """
-    labelarray, count = measure.label(numpyarray, connectivity=1, return_num=True,neighbors=4)
+    labelarray, count = scipy.ndimage.measurements.label(numpyarray, structure)
     properties = measure.regionprops(labelarray)
     return properties
 
@@ -169,7 +178,12 @@ def processframe(pilimage):
     :param pilimage: PIL.Image
     :return:
     """
-    # this gets all the indexes.
+    # TODO: Idea on of overfilling
+    # [[0,0,0],
+    #  [1,1,1],
+    #  [0,0,0]]
+    # Keep this as template. aka pattern. use scipy measure and that s pattern to match all connecting
+    # this gets all the fills. the rest is thrown into the pile of sets.
     # we assume index 0 as discarded (Can't really do much with black images.)
     numpyarrayfrompil = numpy.array(pilimage)
     # First we pass to regionprops
@@ -233,5 +247,9 @@ bcompat = ['00', '40', '80', 'c0', 'ff']
 def colorcompat(RGBString: str):
     chunks = [RGBString[i:i + 2] for i in range(0, len(RGBString), 2)]
     chunks.pop(0)
-    print(RGBString)
     return f"{rcompat.index(chunks[0])}{gcompat.index(chunks[1])}{bcompat.index(chunks[2])}"
+
+
+def depress(RGBString):
+    RGBString = RGBString.decode()
+    return f"#{rcompat[int(RGBString[0])]}{gcompat[int(RGBString[1])]}{bcompat[int(RGBString[2])]}"

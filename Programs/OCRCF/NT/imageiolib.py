@@ -7,7 +7,7 @@ import sys
 import imageio
 import tqdm
 
-from NT import Utils
+import Utils
 
 
 def getfps(gif):
@@ -27,15 +27,14 @@ def multiread(video):
     return reader, fps, frames, name
 
 
-def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
+def MultiWriteGifWrapper(readerobject, fp):
     wrapperobject = MultiWriteGif(fp,
-                                  fps=readerobject.get_meta_data()['fps'], optimise=useinternal)
+                                  fps=readerobject.get_meta_data()['fps'])
 
     with tqdm.tqdm(desc="Images Extracted & Converted", total=readerobject.get_length(),
                    unit='frames') as bar:
         try:
             for index, image in enumerate(readerobject):
-                image = Utils.resizetosize(Utils.correcttopil(image))
                 image = Utils.correcttonumpy(Utils.applypilpalette(image))
                 wrapperobject.adddata(image)
                 bar.update(1)
@@ -58,9 +57,9 @@ def MultiWriteGifWrapper(readerobject, fp, useinternal=True):
 
 class MultiWriteGif:
 
-    def __init__(self, fp, fps, optimise=True):
+    def __init__(self, fp, fps):
         print(fp)
-        self.writer = imageio.get_writer(fp, fps=fps, subrectangles=optimise)
+        self.writer = imageio.get_writer(fp, fps=fps, subrectangles=False)
 
     def adddata(self, imageioframe):
         try:

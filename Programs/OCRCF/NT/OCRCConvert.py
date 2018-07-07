@@ -2,9 +2,10 @@ import os
 import subprocess
 import sys
 import zipfile
+import Utils
 import traceback
 import imageio
-from NT import imageiolib
+import imageiolib
 
 print("Checking and Installing \"colorama\".")
 try:
@@ -28,7 +29,6 @@ def main():
     try:
         print("Checking/Installing for FFmpeg...")
         imageio.plugins.ffmpeg.download()
-        gifsicleoptimise = 2
         print("--- Delete Video after done? ---")
         print("[Y]es, [N]o (Default)")
         if 'y' in input('Delete Inputs >:').lower():
@@ -48,12 +48,13 @@ def main():
             print("Be sure to delete the \"gitpls\" file!")
             sys.exit()
         for x in videos:
-            a = os.path.join(os.getcwd(), 'videoinput',x)
+            a = os.path.join(os.getcwd(), 'videoinput', x)
             print(f"Prcoessing: {x}")
-            subprocess.call(['ffmpeg', '-i', a, '-c', 'copy', '-c', 'copy', os.path.join(os.getcwd(), 'videoinput', f"active{x}")])
-            readerobject, fps, frames, name = imageiolib.multiread(os.path.join(os.getcwd(), 'videoinput', f"active{x}"))
-            imageiolib.MultiWriteGifWrapper(readerobject, os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif"),
-                                            True if gifsicleoptimise is 1 else False)
+            subprocess.call(['ffmpeg', '-r', '20', '-i', a,
+                             os.path.join(os.getcwd(), 'videoinput', f"active{x}")])
+            readerobject, fps, frames, name = imageiolib.multiread(
+                os.path.join(os.getcwd(), 'videoinput', f"active{x}"))
+            imageiolib.MultiWriteGifWrapper(readerobject, os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif"))
             subprocess.call([os.path.join(os.getcwd(), 'deps', 'gifsicle.exe'), '--optimize=3',
                              os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif"),
                              '-o', os.path.join(os.getcwd(), 'workinginput', f"{name[0]}.gif")])
