@@ -3,6 +3,10 @@ local event = require("event")
 local component = require("component")
 local clients = {}
 local channels = {
+  ["general"] = {
+    clients = {},
+    messages = {"<Server> something"}
+  }
 }
 local motd = {
 "Test Server",
@@ -33,11 +37,16 @@ local function data(_, origin, id)
   local data = cl.socket:read()[1]
   local split = string.split(data)
   pcall(function() -- to avoid some little tweakers to crash NRC server with bad syntax
-    if split[1] == "USERNAME" then
-      cl.username = split[2]
+    if split[1] == "USERNAME" and not cl.username then
+        cl.username = split[2]
     end
     if split[1] == "CHANNEL" then
-      
+        if cl.channel ~= nil then
+          channels[cl.channel].clients[origin] = nil
+        end
+    end
+    if split[1] == "SAY" then
+        
     end
   end)
 end
