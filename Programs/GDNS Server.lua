@@ -13,7 +13,7 @@ end
 
 local function data(_, origin, id)
   local socket = sockets[origin]
-  local rq = socket:read[1]
+  local rq = socket:read()[1]
   print("Request for domain " .. rq)
   local stream = io.open("/domains.txt", "r")
   addresses = serialize.unserialize(stream:read("*a"))
