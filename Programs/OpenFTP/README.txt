@@ -7,9 +7,6 @@ Thank you for choosing OpenFTP: Coded by Tonatsi (Also known as Leothehero)
 To use the program (Release 1); you will need 1 server and 1 client.
 There are two types available, one that utilises the GERT Networking Protocol; and one that utilises network cards in OpenComputers.
 
---Although this program will work with any Lua compatible operating system that utilises the same modem component access as the default OpenOS, it is recommended to use a secure Operating system; at minimum for the file-server, such as the FUCHAS OS. It is uncertain exactly how secure this program can be as it was not designed with FUCHAS or other OS in mind, and may not adhere to their security guidelines or make use of its features.
-
-
 ###########
 #With GERT#
 ###########
