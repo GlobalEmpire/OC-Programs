@@ -57,7 +57,7 @@ local function FTPCSend(Path, name)
 	local SvrKey = DC.deserializeKey(SvrKey, "ec-public")
 	local EncryptionKey = DC.ecdh(PrKey, SvrKey)
 	local HashKey, IVC = DC.md5(EncryptionKey), 0
-	batchSocket3("S.FileStart", DC.encrypt(tostring(name), HashKey, DC.md5(tostring(IVC))), GERTi.getAddress())
+	batchSocket3("S.FileStart", DC.encrypt(tostring(name), HashKey, DC.md5(tostring(IVC))), GERTi.getAddress(), FTPsocket)
 	WaitForResponse(98)	
 	local state = FTPsocket:read()
 	if state[1] == "StartConfirm" then
@@ -84,9 +84,7 @@ local function FTPCSend(Path, name)
 		file:close()
 		IVC = IVC + 1
 		local ID = FTPsocket:read()
-		print(ID[1])
 		ID = DC.decrypt(ID[1], HashKey, DC.md5(tostring(IVC)))
-		print(ID)
 		FTPsocket:close()
 		return true, ID
 	else
@@ -106,18 +104,12 @@ local function FTPCReceive(FileIdName, ResultPath)
 	end
 	local PuKey, PrKey = DC.generateKeyPair()
 	batchSocket3("SendNKey", PuKey.serialize(), 0, FTPsocket)
-	print("K0")
 	WaitForResponse(98)
 	local SvrKey = FTPsocket:read()
-	print("K1")
 	SvrKey = SvrKey[1]
-	print("K2")
 	local SvrKey = DC.deserializeKey(SvrKey, "ec-public")
-	print("K3")
 	local EncryptionKey = DC.ecdh(PrKey, SvrKey)
-	print("K4")	
 	local HashKey, IVC = DC.md5(EncryptionKey), 0
-	print("K5")
 	batchSocket3("R.FileStart", DC.encrypt(FileIdName, HashKey, DC.md5(tostring(IVC))), GERTi.getAddress(), FTPsocket)
 	WaitForResponse(98)
 	os.sleep(0.1)
