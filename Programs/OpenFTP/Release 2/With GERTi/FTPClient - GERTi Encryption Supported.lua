@@ -8,7 +8,7 @@ term.clear()
 local DC = component.data
 if DC.generateKeyPair == nil then print("This service requires a T3 data card to be installed. There is no T3 data card detected by this program. Please ensure that you have a ///T3/// card installed.") os.exit() end
 print("Please enter Server GERTi Address: ")
-local FTPaddress = tonumber(io.read()) -- Get Address of FTP server
+local FTPaddress = tonumber(io.read())
 print("This computer's GERTi address is: " .. GERTi.getAddress())
 GERTi.send(FTPaddress, "GetVersion")
 local _, _, _, ServerVersion = event.pull("GERTData")
@@ -41,10 +41,10 @@ local function batchSocket3(var1, var2, var3, socket)
 	os.sleep(0.1)
 end
 
-local function FTPCSend(Path, name) -- Send file function; (Absolute path of file, Name to save file under)
+local function FTPCSend(Path, name)
 	assert(type(Path) == "string", "File Path must be the absolute path of the file to send given as a string")
 	assert(type(name) == "string" or type(name) == "number", "The name that the file will be stored under partially must be either a string or a number")
-	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
+	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98)
 	local CID = 0
 	while CID ~= 98 do
 		_, _, CID = event.pull("GERTConnectionID")
@@ -52,55 +52,54 @@ local function FTPCSend(Path, name) -- Send file function; (Absolute path of fil
 	local PuKey, PrKey = DC.generateKeyPair()
 	batchSocket3("SendNKey", PuKey.serialize(), 0, FTPsocket)
 	WaitForResponse(98)
-	os.sleep(0.1)
 	local SvrKey = FTPsocket:read()
 	SvrKey = SvrKey[1]
-	SvrKey = DC.deserializeKey(SvrKey, "ec-public")
+	local SvrKey = DC.deserializeKey(SvrKey, "ec-public")
 	local EncryptionKey = DC.ecdh(PrKey, SvrKey)
 	local HashKey, IVC = DC.md5(EncryptionKey), 0
-	os.sleep(0.1)
-	batchSocket3("S.FileStart", DC.encrypt(tostring(name), HashKey, DC.md5(tostring(IVC))), GERTi.getAddress(), FTPsocket)
+	batchSocket3("S.FileStart", DC.encrypt(tostring(name), HashKey, DC.md5(tostring(IVC))), GERTi.getAddress())
 	WaitForResponse(98)	
-	local state = FTPsocket:read() -- state
-	if state[1] == "StartConfirm" then -- Confirm server has correctly initialised the transfer
+	local state = FTPsocket:read()
+	if state[1] == "StartConfirm" then
 		print("Sending")
-		local file = io.open(Path) -- Open File
+		local file = io.open(Path)
 		IVC = IVC + 1
 		local UnP = file:read(4096)
-		local P = DC.encrypt(UnP, HashKey, DC.md5(tostring(IVC))) -- Read file
-		batchSocket3("S.FileContinue", P, GERTi.getAddress(), FTPsocket)	-- write address (unused vestigial code)
+		local P = DC.encrypt(UnP, HashKey, DC.md5(tostring(IVC)))
+		batchSocket3("S.FileContinue", P, GERTi.getAddress(), FTPsocket)
 		WaitForResponse(98)
-		local state = FTPsocket:read() -- state
-		while string.len(UnP) == 4096 do -- send file until no file left to send
+		local state = FTPsocket:read()
+		while string.len(UnP) == 4096 do
 			print("Sending")
 			IVC = IVC + 1
 			UnP = file:read(4096)
-			P = DC.encrypt(UnP, HashKey, DC.md5(tostring(IVC))) -- Read file
+			P = DC.encrypt(UnP, HashKey, DC.md5(tostring(IVC)))
 			batchSocket3("S.FileContinue", P, GERTi.getAddress(), FTPsocket)			
 			WaitForResponse(98)
 			FTPsocket:read()
 		end
 		print("Finishing")
-		file:close() -- stop reading file
 		batchSocket3("S.FileFin", 0, GERTi.getAddress(), FTPsocket) 
 		WaitForResponse(98)
+		file:close()
 		IVC = IVC + 1
 		local ID = FTPsocket:read()
+		print(ID[1])
 		ID = DC.decrypt(ID[1], HashKey, DC.md5(tostring(IVC)))
-		FTPsocket:close() -- close socket
-		return true, ID -- Return file identifier
+		print(ID)
+		FTPsocket:close()
+		return true, ID
 	else
 		FTPsocket:close()
-		return false, "FTP Error - Incorrect State Response" -- if server has not initialised file transfer correctly
+		return false, "FTP Error - Incorrect State Response"
 	end
 end
-	
 
 local function FTPCReceive(FileIdName, ResultPath)
 	assert(type(FileIdName)=="string", "The identifier for the file must be a string; usually in the format <name.number>.")
 	if ResultPath == nil then file = io.open(tostring("/home/" .. FileIdName), "w")
 	else file = io.open(tostring(ResultPath), "w") end
-	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
+	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98)
 	local CID = 0
 	while CID ~= 98 do
 		_, _, CID = event.pull("GERTConnectionID")
