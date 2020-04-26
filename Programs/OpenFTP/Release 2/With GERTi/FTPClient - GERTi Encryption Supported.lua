@@ -13,7 +13,7 @@ print("This computer's GERTi address is: " .. GERTi.getAddress())
 GERTi.send(FTPaddress, "GetVersion")
 local _, _, _, ServerVersion = event.pull("GERTData")
 if ServerVersion ~= Compatibility then 
-	print("Selected Server does not meet the compatibility requirements of this client program version. Your client is at version ", Compatibility, " while the server is at version ", ServerVersion, ". Please Update either your program or the server. Report any bugs and/or errors that may have forced you to downgrade to lower versions.") 
+	print("The Selected Server does not meet the compatibility requirements of this client program version. Your client is at version ", Compatibility, " while the server is at version ", ServerVersion, ". Please Update either your program or the server. Report any bugs and/or errors that may have forced you to downgrade to lower versions.") 
 	print("You can override the compatibility check, however it could cause problems. We do not bug-fix issues between incompatible clients, unless it also effects same-version clients. We will re-organise the compatibility scheme once we have implemented all the features we want in the base program. [Y/N]: ")
 	local response = tostring(io.read())
 	if response == "Y" then 
@@ -105,19 +105,15 @@ local function FTPCReceive(FileIdName, ResultPath)
 		_, _, CID = event.pull("GERTConnectionID")
 	end
 	local PuKey, PrKey = DC.generateKeyPair()
+	os.sleep(0.1)
 	batchSocket3("SendNKey", PuKey.serialize(), 0, FTPsocket)
-	print("K0")
 	WaitForResponse(98)
 	local SvrKey = FTPsocket:read()
-	print("K1")
 	SvrKey = SvrKey[1]
-	print("K2")
-	local SvrKey = DC.deserializeKey(SvrKey, "ec-public")
-	print("K3")
+	SvrKey = DC.deserializeKey(SvrKey, "ec-public")
 	local EncryptionKey = DC.ecdh(PrKey, SvrKey)
-	print("K4")	
 	local HashKey, IVC = DC.md5(EncryptionKey), 0
-	print("K5")
+	os.sleep(0.1)
 	batchSocket3("R.FileStart", DC.encrypt(FileIdName, HashKey, DC.md5(tostring(IVC))), GERTi.getAddress(), FTPsocket)
 	WaitForResponse(98)
 	os.sleep(0.1)
@@ -147,31 +143,31 @@ local function FTPCReceive(FileIdName, ResultPath)
 	else FTPsocket:close() file:close() return false, "FTP Error - Incorrect State Response"  end
 end
 while true do
-print("Server Found - Address is " .. FTPaddress)
-print("Type 'Send' to send a file to the server or 'Request' to request a file from the Server")
-print("Please enter Mode:")
-local OPMode = io.read()
+	print("Server Found - Address is " .. FTPaddress)
+	print("Type 'Send' to send a file to the server or 'Request' to request a file from the Server")
+	print("Please enter Mode:")
+	local OPMode = io.read()
 
-if OPMode == "Send" then
-	print("Please specify the absolute path of the file starting with '/'")
-	Path = tostring(io.read())
-	print("Please enter the name which will be given to the file when transfered: ")
-	local name = tostring(io.read())
-	print("The file will now be sent to the Server. You will be sent an identifier for the program when the transfer is completed which you may use to request your file from the server from any connected computer.")
-	local state, ID = FTPCSend(Path, name)
-	if state == true then print("File successfully saved onto server. Request it with the ID " .. ID)
-	else print("Something went wrong; error string: ", ID)
+	if OPMode == "Send" then
+		print("Please specify the absolute path of the file starting with '/'")
+		Path = tostring(io.read())
+		print("Please enter the name which will be given to the file when transfered: ")
+		local name = tostring(io.read())
+		print("The file will now be sent to the Server. You will be sent an identifier for the program when the transfer is completed which you may use to request your file from the server from any connected computer.")
+		local state, ID = FTPCSend(Path, name)
+		if state == true then print("File successfully saved onto server. Request it with the ID " .. ID)
+		else print("Something went wrong; error string: ", ID)
+		end
+	elseif OPMode == "Request" then
+		print("Enter the file's identification string that was given upon completion of the File Transfer to the server.")
+		local FileIdCode = tostring(io.read())
+		local err, code = FTPCReceive(FileIdCode)
+		if err == false then print("Something went wrong; error string: ", code) else print("Your file has been successfully downloaded to /home/" .. FileIdCode)
+		end 
+		os.exit()
+	else 
+		print("You have not entered a valid mode of operation. Press anything to try again. To exit; press [Enter/Return]")
+		local _, _, _, key = event.pull("key_down")
+		if key == 28 then os.exit() end
 	end
-elseif OPMode == "Request" then
-	print("Enter the file's identification string that was given upon completion of the File Transfer to the server.")
-	local FileIdCode = tostring(io.read())
-	local err, code = FTPCReceive(FileIdCode)
-	if err == false then print("Something went wrong; error string: ", code) else print("Your file has been successfully downloaded to /home/" .. FileIdCode)
-	end 
-	os.exit()
-else 
-	print("You have not entered a valid mode of operation. Please try again. To exit; press 'ctrl+alt+c'")
-	os.sleep(5)
-	term.clear()
-end
 end
