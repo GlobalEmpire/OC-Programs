@@ -7,14 +7,14 @@ local GERTi = require("GERTiClient")
 term.clear()
 local DC = component.data
 if DC.generateKeyPair == nil then print("This service requires a T3 data card to be installed. There is no T3 data card detected by this program. Please ensure that you have a ///T3/// card installed.") os.exit() end
+print("This computer's GERTi address is: " .. GERTi.getAddress())
 print("Please enter Server GERTi Address: ")
 local FTPaddress = tonumber(io.read())
-print("This computer's GERTi address is: " .. GERTi.getAddress())
 GERTi.send(FTPaddress, "GetVersion")
 local _, _, _, ServerVersion = event.pull("GERTData")
 if ServerVersion ~= Compatibility then 
 	print("The Selected Server does not meet the compatibility requirements of this client program version. Your client is at version ", Compatibility, " while the server is at version ", ServerVersion, ". Please Update either your program or the server. Report any bugs and/or errors that may have forced you to downgrade to lower versions.") 
-	print("You can override the compatibility check, however it could cause problems. We do not bug-fix issues between incompatible clients, unless it also effects same-version clients. We will re-organise the compatibility scheme once we have implemented all the features we want in the base program. [Y/N]: ")
+	print("You can override the compatibility check, however it could cause problems. We do not bug-fix issues between incompatible clients, unless it also affects same-version clients. We will re-organise the compatibility scheme once we have implemented all the features we want in the base program. [Y/N]: ")
 	local response = tostring(io.read())
 	if response == "Y" then 
 		print("Overriding")
@@ -156,13 +156,13 @@ while true do
 		print("The file will now be sent to the Server. You will be sent an identifier for the program when the transfer is completed which you may use to request your file from the server from any connected computer.")
 		local state, ID = FTPCSend(Path, name)
 		if state == true then print("File successfully saved onto server. Request it with the ID " .. ID)
-		else print("Something went wrong; error string: ", ID)
+		else io.stderr:write("Something went wrong; error string: " .. ID)
 		end
 	elseif OPMode == "Request" then
 		print("Enter the file's identification string that was given upon completion of the File Transfer to the server.")
 		local FileIdCode = tostring(io.read())
 		local err, code = FTPCReceive(FileIdCode)
-		if err == false then print("Something went wrong; error string: ", code) else print("Your file has been successfully downloaded to /home/" .. FileIdCode)
+		if err == false then io.stderr:write("Something went wrong; error string: " .. code) else print("Your file has been successfully downloaded to /home/" .. FileIdCode)
 		end 
 		os.exit()
 	else 
