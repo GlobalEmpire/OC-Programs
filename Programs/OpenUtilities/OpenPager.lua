@@ -8,15 +8,22 @@ local args, opts = shell.parse(...)
 local serialization = require("serialization")
 local event = require("event")
 local ConfigSettings = {}
-local function toboolean(var)
+ConfigSettings["CID"] = 128
+local OpenConnections = {}
+if OpenPagerListeners == nil then
+    OpenPagerListeners = {}
+end
+::RestartProgram::
+local function toboolean(var, strict)
     if var == "true" then
         return true
-    elseif var == "false" then
+    elseif var == "false" or strict ~= nil then
         return false
     else
         return var
     end
 end
+
 if component.filesystem.isReadOnly() then os.exit() end
 if not(fs.exists("../OpenPager")) then 
     fs.makeDirectory("../OpenPager")
@@ -24,66 +31,229 @@ elseif not(fs.isDirectory("../OpenPager")) then
     fs.rename("../OpenPager", "../OpenPager.old")
     fs.makeDirectory("../OpenPager")
 end
-if not(fs.exists("../OpenPager/.Config")) and args[1] ~= "Config" then
+
+local function readSocket(originAddress)
+    OpenConnections[originAddress]:read()
+end
+
+local function receiveData(eventName, originAddress, connectionID, data)
+    if data == nil and ConfigSettings["CID"] == connectionID then
+        data = readSocket(originAddress)
+    elseif data == "OpenPagerSendNames" then
+        GERTi.send(originAddress, ConfigSettings["DeviceName"])
+    elseif data ~= nil and string.starts(data,"NewMessage") then
+        local date = os.date()
+        local NewFile = io.open("../OpenPager/" .. date, "w")
+        NewFile:write(string.sub(data,11,-1))
+        NewFile:close()
+        local NewFile = io.open("../OpenPager/" .. date)
+        local Name = NewFile:read("*l")
+        local Subject = NewFile:read("*l")
+        NewFile:close()
+        local UpdateFile = io.open("../OpenPager/.", "w")
+        UpdateFile:seek("end")
+        UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n")
+        UpdateFile:close()
+        computer.beep() -- make it three times
+    
+    end
+end
+
+local function openSocket(eventName, originAddress, connectionID)
+    if connectionID == ConfigSettings["CID"] then 
+        OpenConnections[originAddress] = GERTi.openSocket(originAddress, connectionID) 
+    end
+end
+
+local function closeSocket()
+
+end
+
+local function SendMessage(Subject,MessageContent,Destination,Important)
+    local TotalMessage = ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent
+    if string.len(TotalMessage) < 6144 then
+        GERTi.send(Destination, TotalMessage)
+        return true
+    else
+        return false
+    end
+end
+
+if not(fs.exists("../OpenPager/.Config")) and string.lower(args[1]) ~= "config" then
     print("OpenPager has not been initialised on this device before or has just been updated. Please run <OpenPager Config> to enter configuration mode. OpenPager will be inactive until this is completed.")
     os.exit()
-elseif args[1] == "Config" then
-    if fs.exists("../OpenPager/.Config") then
-        local ConfigFile = io.open("../OpenPager/.Config") 
-        ConfigSettings = serialization.unserialize(ConfigFile:read())
-        ConfigFile:close()
-        print("All Config Settings currently present in the file will now be listed. If you have recently upgraded the program, please delete the config file to regenerate by entering DELETECONFIG (The program will reinitialise next launch). Save and Exit by typing EXIT. Modify a value by entering the setting name, and afterwards the new value (Ensure you do not enter the two simultaneously). The new value can only be of the same variable type as the previous value.")        
-            for element in ConfigSettings do
-            print(element .. " : " .. ConfigSettings[element])
-        end
-        ::Config0::
-        local userResponse = io.read()
-        if userResponse == "EXIT" then
-            print("Saving and Exiting")
-            fs.remove("../OpenPager/.Config")
+elseif args[1] ~= nil then
+    if string.lower(args[1]) == "config" then
+        if fs.exists("../OpenPager/.Config") then
+            local ConfigFile = io.open("../OpenPager/.Config") 
+            ConfigSettings = serialization.unserialize(ConfigFile:read())
+            ConfigFile:close()
+            io.stderr:write("====================\n")
+            print("All Config Settings currently present in the file will now be listed. If you have recently upgraded the program, please delete the config file to regenerate by entering [deleteconfig] (The program will reinitialise next launch). Save and Exit by typing [exit]. Modify a value by entering the setting name, and afterwards the new value (Ensure you do not enter the two simultaneously). The new value can only be of the same variable type as the previous value.")        
+            io.stderr:write("====================\n")
+            for key, value in pairs(ConfigSettings) do
+                print(tostring(key) .. " : " .. tostring(value))
+            end
+            io.stderr:write("====================\n")
+            ::Config0::
+            local userResponse = io.read()
+            if string.lower(userResponse) == "exit" then
+                print("Saving and Exiting")
+                fs.remove("../OpenPager/.Config")
+                local ConfigFile = io.open("../OpenPager/.Config", "w")
+                ConfigFile:write(serialization.serialize(ConfigSettings))
+                ConfigFile:close()
+                os.exit()
+            elseif string.lower(userResponse) == "deleteconfig" then
+                fs.remove("../OpenPager/.Config")
+                print("Deleted")
+                os.exit()
+            elseif ConfigSettings[userResponse] ~= nil then
+                local userResponse2 = toboolean(io.read())
+                if type(userResponse2) == type(ConfigSettings[userResponse]) then
+                    ConfigSettings[userResponse] = userResponse2
+                    print("Successfully Updated")
+                    io.stderr:write("====================\n")
+                else
+                    print("Incorrect variable value type")
+                end
+            else
+                io.stderr:write("Unknown command/option")
+            end
+            goto Config0
+        else
+            print("This is the first time initialisation of OpenPager. Commencing setup:")
+            print("Please give this device a name. If a duplicate device name appears on the network, both devices will be asked to resolve. If you have a better idea on what to do, please tell us.")
+            ConfigSettings["DeviceName"] = tostring(io.read())
+            ::A::
+            print("Do you wish to be notified about Broadcasted Messages? [boolean]")
+            ConfigSettings["BroadNotif"] = tostring(io.read())
+            if not(ConfigSettings["BroadNotif"] == "true" or ConfigSettings["BroadNotif"] == "false") then
+                print("Invalid Entry")
+                goto A
+            else
+                ConfigSettings["BroadNotif"] = toboolean(ConfigSettings["BroadNotif"])
+            end
+            ::B::
+            print("Do you wish to be notified about Direct Messages? [boolean]")
+            ConfigSettings["DirectNotif"] = tostring(io.read())
+            if not(ConfigSettings["DirectNotif"] == "true" or ConfigSettings["DirectNotif"] == "false") then
+                print("Invalid Entry")
+                goto B
+            else
+                ConfigSettings["DirectNotif"] = toboolean(ConfigSettings["DirectNotif"])
+            end
+            print("Do you wish to allow 'Important' messages to notify you continuously until read? [boolean]")
+            ConfigSettings["ImportantNotif"] = tostring(io.read())
+            if not(ConfigSettings["ImportantNotif"] == "true" or ConfigSettings["ImportantNotif"] == "false") then
+                print("Invalid Entry")
+                goto B
+            else
+                ConfigSettings["ImportantNotif"] = toboolean(ConfigSettings["ImportantNotif"])
+            end
             local ConfigFile = io.open("../OpenPager/.Config", "w")
             ConfigFile:write(serialization.serialize(ConfigSettings))
             ConfigFile:close()
-            os.exit()
-        elseif userResponse == "DELETECONFIG" then
-            fs.remove("../OpenPager/.Config")
-            print("Deleted")
-            os.exit()
-        elseif ConfigSettings[userResponse] ~= nil then
-            local userResponse2 = toboolean(io.read())
-            if type(userResponse2) == type(ConfigSettings[userResponse]) then
-                ConfigSettings[userResponse] = userResponse2
-                print("Successfully Updated")
+            args[1] = "restart"
+            goto RestartProgram
+        end
+    elseif string.lower(args[1]) == "start" then
+        local ConfigFileLoad = io.open("../OpenPager/.Config", "r")
+        ConfigSettings = serialization.unserialize(ConfigFileLoad:read())
+        ConfigFileLoad:close()
+        if #OpenPagerListeners == 0 then
+            OpenPagerListeners[1] = event.listen("GERTData",receiveData)
+            if opts.o then if OpenPagerListeners[1] then print("Direct Message OpenPagerListeners successfully activated.\n") else io.stderr:write("Direct Message OpenPagerListeners Already Active\n") end end
+            OpenPagerListeners[2] = event.listen("GERTConnectionID",openSocket)
+            if opts.o then if OpenPagerListeners[2] then print("Socket Opener successfully activated.\n") else io.stderr:write("Socket Opener Already Active\n") end end
+            OpenPagerListeners[3] = event.listen("GERTConnectionClose",closeSocket)
+            if opts.o then if OpenPagerListeners[3] then print("Socket Closer successfully activated.\n") else io.stderr:write("Socket Closer Already Active\n") end end
+            print(OpenPagerListeners[1], OpenPagerListeners[2], OpenPagerListeners[3])
+            print(#OpenPagerListeners)
+        else
+            io.stderr:write("OpenPagerListeners Processes already active")
+        end
+        os.exit()
+    elseif string.lower(args[1]) == "stop" then
+        if #OpenPagerListeners == 0 then 
+            io.stderr:write("No OpenPagerListeners processes currently active")
+            print(#OpenPagerListeners)
+        else
+            local DataReturn = event.cancel(OpenPagerListeners[1])
+            if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
+            local OSocketReturn = event.cancel(OpenPagerListeners[2])
+            if opts.o then if OSocketReturn then print("Socket Opener successfully deactivated.\n") else io.stderr:write("Socket Opener Not Found\n") end end
+            local CSocketReturn = event.cancel(OpenPagerListeners[3])
+            if opts.o then if CSocketReturn then print("Socket Closer successfully deactivated.\n") else io.stderr:write("Socket Closer Not Found\n") end end
+            print(DataReturn, OSocketReturn, CSocketReturn)
+            OpenPagerListeners = {}
+        end
+        os.exit()
+    elseif string.lower(args[1]) == "restart" then
+        if #OpenPagerListeners == 0 then 
+            io.stderr:write("No OpenPagerListeners processes currently active")
+            print(#OpenPagerListeners)
+        else
+            local DataReturn = event.cancel(OpenPagerListeners[1])
+            if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
+            local OSocketReturn = event.cancel(OpenPagerListeners[2])
+            if opts.o then if OSocketReturn then print("Socket Opener successfully deactivated.\n") else io.stderr:write("Socket Opener Not Found\n") end end
+            local CSocketReturn = event.cancel(OpenPagerListeners[3])
+            if opts.o then if CSocketReturn then print("Socket Closer successfully deactivated.\n") else io.stderr:write("Socket Closer Not Found\n") end end
+            print(DataReturn, OSocketReturn, CSocketReturn)
+            OpenPagerListeners = {}
+        end
+        local ConfigFileLoad = io.open("../OpenPager/.Config")
+        ConfigSettings = serialization.unserialize(ConfigFileLoad:read())
+        ConfigFileLoad:close()
+        if #OpenPagerListeners == 0 then
+            OpenPagerListeners[1] = event.listen("GERTData",receiveData)
+            if opts.o then if OpenPagerListeners[1] then print("Direct Message OpenPagerListeners successfully activated.\n") else io.stderr:write("Direct Message OpenPagerListeners Already Active\n") end end
+            OpenPagerListeners[2] = event.listen("GERTConnectionID",openSocket)
+            if opts.o then if OpenPagerListeners[2] then print("Socket Opener successfully activated.\n") else io.stderr:write("Socket Opener Already Active\n") end end
+            OpenPagerListeners[3] = event.listen("GERTConnectionClose",closeSocket)
+            if opts.o then if OpenPagerListeners[3] then print("Socket Closer successfully activated.\n") else io.stderr:write("Socket Closer Already Active\n") end end
+            print(OpenPagerListeners[1], OpenPagerListeners[2], OpenPagerListeners[3])
+        else
+            io.stderr:write("OpenPagerListeners Processes already active")
+        end    
+        os.exit()
+    elseif string.lower(args[1]) == "Compose" then
+        local Subject
+        if args[2] ~= nil then
+            Subject = args[2]
+            if args[3] ~= nil then
+                local MessageContent = args[3]
+                if args[4] ~= nil then
+                    local Important = toboolean(args[4],0)
+                    SendMessage(Subject, MessageContent, Important, args[5])
+                else
+                    SendMessage(Subject, MessageContent, false, args[5])
+                end
             end
-        end
-        goto Config0
-    else
-        print("This is the first time initialisation of OpenPager. Commencing setup:")
-        print("Please give this device a name. If a duplicate device name appears on the network, both devices will be asked to resolve.")
-        ConfigSettings["DeviceName"] = tostring(io.read())
-        ::A::
-        print("Do you wish to be notified about Broadcasted Messages? [boolean]")
-        ConfigSettings["BroadNotif"] = tostring(io.read())
-        if not(ConfigSettings["BroadNotif"] == "true" or ConfigSettings["BroadNotif"] == "false") then
-            print("Invalid Entry")
-            goto A
         else
-            ConfigSettings["BroadNotif"] = toboolean(ConfigSettings["BroadNotif"])
+            while Subject == nil do
+                print("Please enter the message subject (Cannot be empty): ")
+                Subject = io.read()
+            end
+            local MessageContent
+            while MessageContent == nil do
+                print("Please enter the message subject (Cannot be empty): ")
+                MessageContent = io.read()
+            end
+            local Important = 0
+            while type(Important) ~= "boolean" do
+                print("Do you want to tag this as important? (true/false):")
+                Important = toboolean(io.read())
+            end
+            local Destination
+            while type(Destination) ~= "string" do
+                print("Enter the Destination address: ")
+                Destination = io.read()
+            end
+            local response = SendMessage(Subject, MessageContent, Important, Destination)
         end
-        ::B::
-        print("Do you wish to be notified about Direct Messages? [boolean]")
-        ConfigSettings["DirectNotif"] = tostring(io.read())
-        if not(ConfigSettings["DirectNotif"] == "true" or ConfigSettings["DirectNotif"] == "false") then
-            print("Invalid Entry")
-            goto B
-        else
-            ConfigSettings["DirectNotif"] = toboolean(ConfigSettings["DirectNotif"])
-        end
-        local ConfigFile = io.open("../OpenPager/.Config", "w")
-        ConfigFile:write(serialization.serialize(ConfigSettings))
-        ConfigFile:close()
     end
-end
-local function ReceiveMessage()
-
+end -- make an else clause that activates a GUI if no args detected
+--create update notifier using internet cards and event.timer
 --assign to event listener for gertdata. create a separate function for sockets
