@@ -77,6 +77,7 @@ local function closeSocket()
 end
 local function SendMessage(Subject,MessageContent,Destination,Important)
     local TotalMessage = tostring(ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent)
+    print(string.len(TotalMessage))
     if string.len(TotalMessage) < 6144 then
         GERTi.send(Destination, TotalMessage)
         return true
@@ -261,6 +262,11 @@ elseif args[1] ~= nil then
                 Destination = io.read()
             end
             local response = SendMessage(Subject, MessageContent, Important, Destination)
+            if response then 
+                print("Message Sent!") 
+            else
+                io.stderr:write("Message Content too long, This is a pager, not email!")
+            end
         end
     end
 end -- make an else clause that activates a GUI if no args detected
