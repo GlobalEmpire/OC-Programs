@@ -15,7 +15,7 @@ if OpenPagerListeners == nil then
 end
 ::RestartProgram::
 local function toboolean(var, strict)
-    if var == "true" then
+    if var == "true" then 
         return true
     elseif var == "false" or strict ~= nil then
         return false
@@ -23,7 +23,6 @@ local function toboolean(var, strict)
         return var
     end
 end
-
 if component.filesystem.isReadOnly() then os.exit() end
 if not(fs.exists("../OpenPager")) then 
     fs.makeDirectory("../OpenPager")
@@ -31,11 +30,12 @@ elseif not(fs.isDirectory("../OpenPager")) then
     fs.rename("../OpenPager", "../OpenPager.old")
     fs.makeDirectory("../OpenPager")
 end
-
 local function readSocket(originAddress)
     OpenConnections[originAddress]:read()
 end
-
+local function ReBeep(a)
+    computer.beep(a)
+end
 local function receiveData(eventName, originAddress, connectionID, data)
     if data == nil and ConfigSettings["CID"] == connectionID then
         data = readSocket(originAddress)
@@ -49,26 +49,32 @@ local function receiveData(eventName, originAddress, connectionID, data)
         local NewFile = io.open("../OpenPager/" .. date)
         local Name = NewFile:read("*l")
         local Subject = NewFile:read("*l")
+        local Important = toboolean(NewFile:read("*l"))
         NewFile:close()
+        if Important then Important = event.timer(1, ReBeep, math.huge)
+        else
+            computer.beep()
+            os.sleep(1)
+            computer.beep()
+            os.sleep(1)
+            computer.beep()
+        end
         local UpdateFile = io.open("../OpenPager/.", "w")
         UpdateFile:seek("end")
-        UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n")
+        UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. tostring(Important) .. "\n")
         UpdateFile:close()
         computer.beep() -- make it three times
     
     end
 end
-
 local function openSocket(eventName, originAddress, connectionID)
     if connectionID == ConfigSettings["CID"] then 
         OpenConnections[originAddress] = GERTi.openSocket(originAddress, connectionID) 
     end
 end
-
 local function closeSocket()
 
 end
-
 local function SendMessage(Subject,MessageContent,Destination,Important)
     local TotalMessage = ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent
     if string.len(TotalMessage) < 6144 then
@@ -78,7 +84,6 @@ local function SendMessage(Subject,MessageContent,Destination,Important)
         return false
     end
 end
-
 if not(fs.exists("../OpenPager/.Config")) and string.lower(args[1]) ~= "config" then
     print("OpenPager has not been initialised on this device before or has just been updated. Please run <OpenPager Config> to enter configuration mode. OpenPager will be inactive until this is completed.")
     os.exit()
