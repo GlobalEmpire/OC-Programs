@@ -44,8 +44,8 @@ local function receiveData(eventName, originAddress, connectionID, data)
         elseif data == "OpenPagerSendNames" then
             GERTi.send(originAddress, ConfigSettings["DeviceName"])
         elseif string.len(data) > 9 and string.sub(data,1,10) == "NewMessage" then
-            local date = os.date()
-            local NewFile = io.open("../OpenPager/" .. date, "w")
+            local date = string.gsub(string.gsub(string.gsub(os.date(), "/", "-"), " ", "@"),":",".")
+            local NewFile = io.open(tostring("../OpenPager/" .. date), "w")
             NewFile:write(string.sub(data,11,-1))
             NewFile:close()
             local NewFile = io.open("../OpenPager/" .. date)
