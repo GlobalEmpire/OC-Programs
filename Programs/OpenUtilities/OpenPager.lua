@@ -41,10 +41,9 @@ local function receiveData(eventName, originAddress, connectionID, data)
     if ConfigSettings["CID"] == connectionID or connectionID == -1 then
         if data == nil then
             data = readSocket(originAddress)
-            print(1)
         elseif data == "OpenPagerSendNames" then
             GERTi.send(originAddress, ConfigSettings["DeviceName"])
-        elseif data ~= nil and string.starts(data,"NewMessage") then
+        elseif string.len(data) > 9 and string.sub(data,1,10) == "NewMessage" then
             local date = os.date()
             local NewFile = io.open("../OpenPager/" .. date, "w")
             NewFile:write(string.sub(data,11,-1))
