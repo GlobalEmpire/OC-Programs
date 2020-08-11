@@ -76,7 +76,7 @@ local function closeSocket()
 
 end
 local function SendMessage(Subject,MessageContent,Destination,Important)
-    local TotalMessage = ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent
+    local TotalMessage = tostring(ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent)
     if string.len(TotalMessage) < 6144 then
         GERTi.send(Destination, TotalMessage)
         return true
@@ -221,6 +221,9 @@ elseif args[1] ~= nil then
         end    
         os.exit()
     elseif string.lower(args[1]) == "compose" then
+        local ConfigFileLoad = io.open("../OpenPager/.Config")
+        ConfigSettings = serialization.unserialize(ConfigFileLoad:read())
+        ConfigFileLoad:close()
         local Subject
         if args[2] ~= nil then
             Subject = args[2]
