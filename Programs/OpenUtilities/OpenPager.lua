@@ -231,22 +231,26 @@ elseif args[1] ~= nil then
             end
         else
             while Subject == nil do
+                io.stderr:write("====================\n")
                 print("Please enter the message subject (Cannot be empty): ")
                 Subject = io.read()
             end
             local MessageContent
             while MessageContent == nil do
+                io.stderr:write("====================\n")
                 print("Please enter the message subject (Cannot be empty): ")
                 MessageContent = io.read()
             end
             local Important = 0
             while type(Important) ~= "boolean" do
+                io.stderr:write("====================\n")
                 print("Do you want to tag this as important? (true/false):")
                 Important = toboolean(io.read())
             end
             local Destination
             while type(Destination) ~= "string" do
-                print("Enter the Destination address: ")
+                io.stderr:write("====================\n")
+                print("Enter the Destination GERTi address: ")
                 Destination = io.read()
             end
             local response = SendMessage(Subject, MessageContent, Important, Destination)
