@@ -127,10 +127,12 @@ elseif args[1] ~= nil then
             end
             goto Config0
         else
+            io.stderr:write("====================\n")
             print("This is the first time initialisation of OpenPager. Commencing setup:")
             print("Please give this device a name. If a duplicate device name appears on the network, both devices will be asked to resolve. If you have a better idea on what to do, please tell us.")
             ConfigSettings["DeviceName"] = tostring(io.read())
             ::A::
+            io.stderr:write("====================\n")
             print("Do you wish to be notified about Broadcasted Messages? [boolean]")
             ConfigSettings["BroadNotif"] = tostring(io.read())
             if not(ConfigSettings["BroadNotif"] == "true" or ConfigSettings["BroadNotif"] == "false") then
@@ -140,6 +142,7 @@ elseif args[1] ~= nil then
                 ConfigSettings["BroadNotif"] = toboolean(ConfigSettings["BroadNotif"])
             end
             ::B::
+            io.stderr:write("====================\n")
             print("Do you wish to be notified about Direct Messages? [boolean]")
             ConfigSettings["DirectNotif"] = tostring(io.read())
             if not(ConfigSettings["DirectNotif"] == "true" or ConfigSettings["DirectNotif"] == "false") then
@@ -148,6 +151,7 @@ elseif args[1] ~= nil then
             else
                 ConfigSettings["DirectNotif"] = toboolean(ConfigSettings["DirectNotif"])
             end
+            io.stderr:write("====================\n")
             print("Do you wish to allow 'Important' messages to notify you continuously until read? [boolean]")
             ConfigSettings["ImportantNotif"] = tostring(io.read())
             if not(ConfigSettings["ImportantNotif"] == "true" or ConfigSettings["ImportantNotif"] == "false") then
@@ -174,12 +178,12 @@ elseif args[1] ~= nil then
             OpenPagerListeners[3] = event.listen("GERTConnectionClose",closeSocket)
             if opts.o then if OpenPagerListeners[3] then print("Socket Closer successfully activated.\n") else io.stderr:write("Socket Closer Already Active\n") end end
         else
-            io.stderr:write("OpenPagerListeners Processes already active")
+            if opts.o then io.stderr:write("OpenPagerListeners Processes already active") end
         end
         os.exit()
     elseif string.lower(args[1]) == "stop" then
         if #OpenPagerListeners == 0 then 
-            io.stderr:write("No OpenPagerListeners processes currently active")
+            if opts.o then io.stderr:write("No OpenPagerListeners processes currently active") end
         else
             local DataReturn = event.cancel(OpenPagerListeners[1])
             if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
@@ -192,7 +196,7 @@ elseif args[1] ~= nil then
         os.exit()
     elseif string.lower(args[1]) == "restart" then
         if #OpenPagerListeners == 0 then 
-            io.stderr:write("No OpenPagerListeners processes currently active")
+            if opts.o then io.stderr:write("No OpenPagerListeners processes currently active") end
         else
             local DataReturn = event.cancel(OpenPagerListeners[1])
             if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
