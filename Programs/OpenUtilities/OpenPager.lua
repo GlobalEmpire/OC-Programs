@@ -37,34 +37,35 @@ local function ReBeep(a)
     computer.beep(a)
 end
 local function receiveData(eventName, originAddress, connectionID, data)
-    if data == nil and ConfigSettings["CID"] == connectionID then
-        data = readSocket(originAddress)
-    elseif data == "OpenPagerSendNames" then
-        GERTi.send(originAddress, ConfigSettings["DeviceName"])
-    elseif data ~= nil and string.starts(data,"NewMessage") then
-        local date = os.date()
-        local NewFile = io.open("../OpenPager/" .. date, "w")
-        NewFile:write(string.sub(data,11,-1))
-        NewFile:close()
-        local NewFile = io.open("../OpenPager/" .. date)
-        local Name = NewFile:read("*l")
-        local Subject = NewFile:read("*l")
-        local Important = toboolean(NewFile:read("*l"))
-        NewFile:close()
-        if Important then Important = event.timer(1, ReBeep, math.huge)
-        else
-            computer.beep()
-            os.sleep(1)
-            computer.beep()
-            os.sleep(1)
-            computer.beep()
+    if ConfigSettings["CID"] == connectionID or connectionID = -1 then
+        if data == nil then
+            data = readSocket(originAddress)
+        elseif data == "OpenPagerSendNames" then
+            GERTi.send(originAddress, ConfigSettings["DeviceName"])
+        elseif data ~= nil and string.starts(data,"NewMessage") then
+            local date = os.date()
+            local NewFile = io.open("../OpenPager/" .. date, "w")
+            NewFile:write(string.sub(data,11,-1))
+            NewFile:close()
+            local NewFile = io.open("../OpenPager/" .. date)
+            local Name = NewFile:read("*l")
+            local Subject = NewFile:read("*l")
+            local Important = toboolean(NewFile:read("*l"))
+            NewFile:close()
+            if Important then Important = event.timer(1, ReBeep, math.huge)
+            else
+                computer.beep()
+                os.sleep(1)
+                computer.beep()
+                os.sleep(1)
+                computer.beep()
+            end
+            local UpdateFile = io.open("../OpenPager/.", "w")
+            UpdateFile:seek("end")
+            UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. tostring(Important) .. "\n")
+            UpdateFile:close()
+            computer.beep() -- make it three times
         end
-        local UpdateFile = io.open("../OpenPager/.", "w")
-        UpdateFile:seek("end")
-        UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. tostring(Important) .. "\n")
-        UpdateFile:close()
-        computer.beep() -- make it three times
-    
     end
 end
 local function openSocket(eventName, originAddress, connectionID)
