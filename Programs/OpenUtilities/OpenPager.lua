@@ -75,11 +75,11 @@ end
 local function closeSocket()
 
 end
-local function SendMessage(Subject,MessageContent,Destination,Important)
+local function SendMessage(Subject,MessageContent,Important,Destination)
     local TotalMessage = tostring(ConfigSettings["DeviceName"] .. "\n" .. Subject .. "\n" .. Important .. "\n" .. MessageContent)
     print(string.len(TotalMessage))
     if string.len(TotalMessage) < 6144 then
-        GERTi.send(Destination, TotalMessage)
+        GERTi.send(tonumber(Destination), TotalMessage)
         return true
     else
         return false
