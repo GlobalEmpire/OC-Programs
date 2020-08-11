@@ -216,7 +216,7 @@ elseif args[1] ~= nil then
             io.stderr:write("OpenPagerListeners Processes already active")
         end    
         os.exit()
-    elseif string.lower(args[1]) == "Compose" then
+    elseif string.lower(args[1]) == "compose" then
         local Subject
         if args[2] ~= nil then
             Subject = args[2]
