@@ -37,7 +37,7 @@ local function ReBeep(a)
     computer.beep(a)
 end
 local function receiveData(eventName, originAddress, connectionID, data)
-    if ConfigSettings["CID"] == connectionID or connectionID = -1 then
+    if ConfigSettings["CID"] == connectionID or connectionID == -1 then
         if data == nil then
             data = readSocket(originAddress)
         elseif data == "OpenPagerSendNames" then
