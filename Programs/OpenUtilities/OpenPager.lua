@@ -37,9 +37,11 @@ local function ReBeep(a)
     computer.beep(a)
 end
 local function receiveData(eventName, originAddress, connectionID, data)
+    print(eventName, originAddress, connectionID, data)
     if ConfigSettings["CID"] == connectionID or connectionID == -1 then
         if data == nil then
             data = readSocket(originAddress)
+            print(1)
         elseif data == "OpenPagerSendNames" then
             GERTi.send(originAddress, ConfigSettings["DeviceName"])
         elseif data ~= nil and string.starts(data,"NewMessage") then
@@ -77,7 +79,7 @@ local function closeSocket()
 
 end
 local function SendMessage(Subject,MessageContent,Important,Destination)
-    local TotalMessage = tostring(ConfigSettings["DeviceName"]) .. "\n" .. tostring(Subject) .. "\n" .. tostring(Important) .. "\n" .. tostring(MessageContent)
+    local TotalMessage = tostring("NewMessage" .. ConfigSettings["DeviceName"]) .. "\n" .. tostring(Subject) .. "\n" .. tostring(Important) .. "\n" .. tostring(MessageContent)
     print(string.len(TotalMessage))
     if string.len(TotalMessage) < 6144 then
         GERTi.send(tonumber(Destination), TotalMessage)
