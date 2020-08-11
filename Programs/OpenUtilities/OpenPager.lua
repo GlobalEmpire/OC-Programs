@@ -173,8 +173,6 @@ elseif args[1] ~= nil then
             if opts.o then if OpenPagerListeners[2] then print("Socket Opener successfully activated.\n") else io.stderr:write("Socket Opener Already Active\n") end end
             OpenPagerListeners[3] = event.listen("GERTConnectionClose",closeSocket)
             if opts.o then if OpenPagerListeners[3] then print("Socket Closer successfully activated.\n") else io.stderr:write("Socket Closer Already Active\n") end end
-            print(OpenPagerListeners[1], OpenPagerListeners[2], OpenPagerListeners[3])
-            print(#OpenPagerListeners)
         else
             io.stderr:write("OpenPagerListeners Processes already active")
         end
@@ -182,7 +180,6 @@ elseif args[1] ~= nil then
     elseif string.lower(args[1]) == "stop" then
         if #OpenPagerListeners == 0 then 
             io.stderr:write("No OpenPagerListeners processes currently active")
-            print(#OpenPagerListeners)
         else
             local DataReturn = event.cancel(OpenPagerListeners[1])
             if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
@@ -190,14 +187,12 @@ elseif args[1] ~= nil then
             if opts.o then if OSocketReturn then print("Socket Opener successfully deactivated.\n") else io.stderr:write("Socket Opener Not Found\n") end end
             local CSocketReturn = event.cancel(OpenPagerListeners[3])
             if opts.o then if CSocketReturn then print("Socket Closer successfully deactivated.\n") else io.stderr:write("Socket Closer Not Found\n") end end
-            print(DataReturn, OSocketReturn, CSocketReturn)
             OpenPagerListeners = {}
         end
         os.exit()
     elseif string.lower(args[1]) == "restart" then
         if #OpenPagerListeners == 0 then 
             io.stderr:write("No OpenPagerListeners processes currently active")
-            print(#OpenPagerListeners)
         else
             local DataReturn = event.cancel(OpenPagerListeners[1])
             if opts.o then if DataReturn then print("Direct Message OpenPagerListeners successfully deactivated.\n") else io.stderr:write("Direct Message OpenPagerListeners Not Found\n") end end
@@ -205,7 +200,6 @@ elseif args[1] ~= nil then
             if opts.o then if OSocketReturn then print("Socket Opener successfully deactivated.\n") else io.stderr:write("Socket Opener Not Found\n") end end
             local CSocketReturn = event.cancel(OpenPagerListeners[3])
             if opts.o then if CSocketReturn then print("Socket Closer successfully deactivated.\n") else io.stderr:write("Socket Closer Not Found\n") end end
-            print(DataReturn, OSocketReturn, CSocketReturn)
             OpenPagerListeners = {}
         end
         local ConfigFileLoad = io.open("../OpenPager/.Config")
@@ -218,7 +212,6 @@ elseif args[1] ~= nil then
             if opts.o then if OpenPagerListeners[2] then print("Socket Opener successfully activated.\n") else io.stderr:write("Socket Opener Already Active\n") end end
             OpenPagerListeners[3] = event.listen("GERTConnectionClose",closeSocket)
             if opts.o then if OpenPagerListeners[3] then print("Socket Closer successfully activated.\n") else io.stderr:write("Socket Closer Already Active\n") end end
-            print(OpenPagerListeners[1], OpenPagerListeners[2], OpenPagerListeners[3])
         else
             io.stderr:write("OpenPagerListeners Processes already active")
         end    
