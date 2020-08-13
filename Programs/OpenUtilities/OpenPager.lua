@@ -51,7 +51,7 @@ local function receiveData(eventName, originAddress, connectionID, data)
             local NewFile = io.open("../OpenPager/" .. date)
             local Name = NewFile:read("*l")
             local Subject = NewFile:read("*l")
-            local Important = toboolean(NewFile:read("*l"))
+            local Important = toboolean(string.sub(NewFile:read("*l"),1, 4), 0)
             NewFile:close()
             if Important then Important = event.timer(1, ReBeep, math.huge)
             else
@@ -61,11 +61,11 @@ local function receiveData(eventName, originAddress, connectionID, data)
                 os.sleep(1)
                 computer.beep()
             end
-            local UpdateFile = io.open("../OpenPager/.", "w")
+            local UpdateFile = io.open("../OpenPager/.UpdateFile", "w")
             UpdateFile:seek("end")
             UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. tostring(Important) .. "\n")
             UpdateFile:close()
-            computer.beep() -- make it three times
+            end
         end
     end
 end
