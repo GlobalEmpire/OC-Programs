@@ -30,6 +30,14 @@ elseif not(fs.isDirectory("../OpenPager")) then
     fs.rename("../OpenPager", "../OpenPager.old")
     fs.makeDirectory("../OpenPager")
 end
+if not(fs.exists("../OpenPager/Messages")) then 
+    fs.makeDirectory("../OpenPager/Messages")
+elseif not(fs.isDirectory("../OpenPager/Messages")) then
+    fs.rename("../OpenPager", "../OpenPager/Messages.old")
+    fs.makeDirectory("../OpenPager/Messages")
+end
+
+
 local function readSocket(originAddress)
     OpenConnections[originAddress]:read()
 end
@@ -45,16 +53,22 @@ local function receiveData(eventName, originAddress, connectionID, data)
             GERTi.send(originAddress, ConfigSettings["DeviceName"])
         elseif string.len(data) > 9 and string.sub(data,1,10) == "NewMessage" then
             local date = string.gsub(string.gsub(string.gsub(os.date(), "/", "-"), " ", "@"),":",".")
-            local NewFile = io.open(tostring("../OpenPager/" .. date), "w")
+            local NewFile = io.open(tostring("../OpenPager/Messages/" .. date), "w")
             NewFile:write(string.sub(data,11,-1))
             NewFile:close()
-            local NewFile = io.open("../OpenPager/" .. date)
+            local NewFile = io.open("../OpenPager/Messages/" .. date)
             local Name = NewFile:read("*l")
             local Subject = NewFile:read("*l")
             local Important = toboolean(string.sub(NewFile:read("*l"),1, 4), 0)
             NewFile:close()
-            if Important then Important = event.timer(1, ReBeep, math.huge)
-            else
+            if Important then 
+                if not(fs.exists("../OpenPager/.Beep")) and ConfigSettings["ImportantNotif"] then
+                    event.timer(1, ReBeep, math.huge)
+                    local File = io.open("../OpenPager/.Beep", "w")
+                    File:write(event.timer(1, ReBeep, math.huge))
+                    File:close()
+                end
+            elseif ConfigSettings["DirectNotif"] then
                 computer.beep()
                 os.sleep(1)
                 computer.beep()
@@ -63,7 +77,7 @@ local function receiveData(eventName, originAddress, connectionID, data)
             end
             local UpdateFile = io.open("../OpenPager/.UpdateFile", "w")
             UpdateFile:seek("end")
-            UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. tostring(Important) .. "\n")
+            UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
             UpdateFile:close()
             end
         end
@@ -270,7 +284,21 @@ elseif args[1] ~= nil then
                 io.stderr:write("Message Content too long, This is a pager, not email!")
             end
         end
+    elseif string.lower(args[1]) == "read" then
+        term.clear()
+        local Messages = filesystem.list("/OpenPager/Messages")
+        print("You have " .. Messages .. " messages.")
+        if #Messages ~= 0 then
+            io.stderr:write("====================\n")
+            for item in 
+        else
+            print("No messages to display.")
+            io.stderr:write("====================\n")
+            os.exit()
+
+        end
+
     end
+
 end -- make an else clause that activates a GUI if no args detected
 --create update notifier using internet cards and event.timer
---assign to event listener for gertdata. create a separate function for sockets
