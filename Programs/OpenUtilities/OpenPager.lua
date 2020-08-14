@@ -286,11 +286,36 @@ elseif args[1] ~= nil then
         end
     elseif string.lower(args[1]) == "read" then
         term.clear()
-        local Messages = filesystem.list("/OpenPager/Messages")
-        print("You have " .. Messages .. " messages.")
+        local FSList = filesystem.list("/OpenPager/Messages")
+        local Messages = {}
+        for element in FSList do
+            Messages[#Messages+1] = element
+        end
+        print("You have " .. #Messages .. " messages.")
         if #Messages ~= 0 then
+            local ImportantMessage = {}
             io.stderr:write("====================\n")
-            for item in 
+            for key, value in pairs(Messages) do
+                local MessageFile = io.open("./OpenPager/Messages/" .. value)
+                local Name = MessageFile:read("*l")
+                local Subject = MessageFile:read("*l")
+                local ImportantMessage[key] = MessageFile:read("*l")
+                MessageFile:close()
+                if ImportantMessage[key] then 
+                    print(key .. " : " .. Subject .. " -From- " .. Name) 
+                end
+                print(tostring(key) .. " : " .. tostring(value))
+            end
+            io.stderr:write("====================\n")
+            local userResponse = nil
+            while userResponse == nil do
+                print("Please enter the number of the message you wish to view. Enter <Delete [number]> to delete the message with the given number. Enter <Exit> to leave.")
+                userResponse = io.read()
+                if Messages[userResponse] ~= nil then
+                    os.execute("edit ../OpenPager/Messages/" .. Messages[UserResponse])
+                    -- do a check for important and remove the timer if so. also make an unread modifier.
+                end
+            end
         else
             print("No messages to display.")
             io.stderr:write("====================\n")
