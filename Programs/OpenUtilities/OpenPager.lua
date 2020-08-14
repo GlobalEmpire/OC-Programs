@@ -91,7 +91,9 @@ local function receiveData(eventName, originAddress, connectionID, data)
             local UpdateFile = io.open("../OpenPager/.UpdateFile", "a")
             print(11)
             print(UpdateFile)
-            print(UpdateFile:write(tostring(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")))
+            print(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
+            local tempdata = Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n"
+            print(UpdateFile:write(tempdata))
             print(12)
             UpdateFile:close()
         end
