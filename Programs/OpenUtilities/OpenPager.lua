@@ -79,7 +79,6 @@ local function receiveData(eventName, originAddress, connectionID, data)
             UpdateFile:seek("end")
             UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
             UpdateFile:close()
-            end
         end
     end
 end
