@@ -73,8 +73,6 @@ local function receiveData(eventName, originAddress, connectionID, data)
             if Important then 
                 print(1)
                 if not(fs.exists("../OpenPager/.Beep")) and ConfigSettings["ImportantNotif"] then
-                    print(2)
-                    event.timer(1, ReBeep, math.huge)
                     print(3)
                     local File = io.open("../OpenPager/.Beep", "w")
                     print(4)
@@ -90,12 +88,10 @@ local function receiveData(eventName, originAddress, connectionID, data)
                 computer.beep()
             end
             print(10)
-            local UpdateFile = io.open("../OpenPager/.UpdateFile", "w")
+            local UpdateFile = io.open("../OpenPager/.UpdateFile", "a")
             print(11)
-            print(UpdateFile:seek("end"))
-            print(12)
             print(UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n"))
-            print(13)
+            print(12)
             UpdateFile:close()
         end
     end
@@ -199,6 +195,13 @@ elseif args[1] ~= nil then
             ConfigFile:close()
             args[1] = "restart"
             goto RestartProgram
+        end
+    elseif string.lower(args[1]) == "boot" then
+        if fs.exists("../OpenPager/.beep") then
+            local beep = event.timer(1, ReBeep, math.huge)
+            local file = io.open("../OpenPager/.beep", "w")
+            file:write(beep)
+            file:close()
         end
     elseif string.lower(args[1]) == "start" then
         local ConfigFileLoad = io.open("../OpenPager/.Config", "r")
