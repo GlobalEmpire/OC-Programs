@@ -53,47 +53,29 @@ local function receiveData(eventName, originAddress, connectionID, data)
             GERTi.send(originAddress, ConfigSettings["DeviceName"])
         elseif string.len(data) > 9 and string.sub(data,1,10) == "NewMessage" then
             local date = string.gsub(string.gsub(string.gsub(os.date(), "/", "-"), " ", "@"),":",".")
-            print(1)
             local NewFile = io.open(tostring("../OpenPager/Messages/" .. date), "w")
-            print(2)
             NewFile:write(string.sub(data,11,-1))
-            print(3)
             NewFile:close()
-            print(4)
             local NewFile = io.open("../OpenPager/Messages/" .. date)
-            print(5)
             local Name = NewFile:read("*l")
-            print(6)
             local Subject = NewFile:read("*l")
-            print(7)
             local Important = toboolean(string.sub(NewFile:read("*l"),1, 4), 0)
-            print(8)
             NewFile:close()
-            print(9)
             if Important then 
-                print(1)
                 if not(fs.exists("../OpenPager/.Beep")) and ConfigSettings["ImportantNotif"] then
-                    print(3)
                     local File = io.open("../OpenPager/.Beep", "w")
-                    print(4)
                     File:write(event.timer(1, ReBeep, math.huge))
-                    print(5)
                     File:close()
                 end
             elseif ConfigSettings["DirectNotif"] then
                 computer.beep()
-                os.sleep(1)
                 computer.beep()
-                os.sleep(1)
                 computer.beep()
             end
-            print(10)
             local UpdateFile = io.open("../OpenPager/.UpdateFile", "a")
-            print(11)
             print(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
             local tempdata = Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n"
             print(UpdateFile:write(tempdata))
-            print(12)
             UpdateFile:close()
         end
     end
@@ -323,7 +305,7 @@ elseif args[1] ~= nil then
                 local Subject = MessageFile:read("*l")
                 ImportantMessage[key] = MessageFile:read("*l")
                 MessageFile:close()
-                if ImportantMessage[key] then 
+                if ImportantMessage[key] then
                     print(key .. " : " .. Subject .. " -From- " .. Name) 
                 end
                 print(tostring(key) .. " : " .. tostring(value))
