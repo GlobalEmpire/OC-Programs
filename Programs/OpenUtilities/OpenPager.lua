@@ -71,10 +71,15 @@ local function receiveData(eventName, originAddress, connectionID, data)
             NewFile:close()
             print(9)
             if Important then 
+                print(1)
                 if not(fs.exists("../OpenPager/.Beep")) and ConfigSettings["ImportantNotif"] then
+                    print(2)
                     event.timer(1, ReBeep, math.huge)
+                    print(3)
                     local File = io.open("../OpenPager/.Beep", "w")
+                    print(4)
                     File:write(event.timer(1, ReBeep, math.huge))
+                    print(5)
                     File:close()
                 end
             elseif ConfigSettings["DirectNotif"] then
