@@ -84,9 +84,13 @@ local function receiveData(eventName, originAddress, connectionID, data)
                 os.sleep(1)
                 computer.beep()
             end
+            print(10)
             local UpdateFile = io.open("../OpenPager/.UpdateFile", "w")
+            print(11)
             UpdateFile:seek("end")
+            print(12)
             UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
+            print(13)
             UpdateFile:close()
         end
     end
