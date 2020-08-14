@@ -92,10 +92,9 @@ local function receiveData(eventName, originAddress, connectionID, data)
             print(10)
             local UpdateFile = io.open("../OpenPager/.UpdateFile", "w")
             print(11)
-            UpdateFile:seek("end")
+            print(UpdateFile:seek("end"))
             print(12)
-            print(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
-            UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n")
+            print(UpdateFile:write(Name .. "\n" .. Subject .. "\n" .. date .. "\n" .. Important .. "\n"))
             print(13)
             UpdateFile:close()
         end
@@ -304,7 +303,7 @@ elseif args[1] ~= nil then
         end
     elseif string.lower(args[1]) == "read" then
         term.clear()
-        local FSList = filesystem.list("/OpenPager/Messages")
+        local FSList = fs.list("/OpenPager/Messages")
         local Messages = {}
         for element in FSList do
             Messages[#Messages+1] = element
