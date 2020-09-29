@@ -16,14 +16,12 @@ if #floppies == 0 then
     os.exit()
 elseif #floppies >= 2 then
     ::pull::
-    local num = 0
-    for element in floppies do
-        num = num+1
+    for num, element in pairs(floppies) do
         print("(" .. num .. ")" .. " " .. element)
     end
     print("Please enter the number of the correct destination filesystem. Hover your cursor over the item to see its component ID.")
     local userNum = io.read()
-    if userNum < 1 or userNum > #floppies then
+    if not(userNum in floppies) then
         print("Invalid Number")
         goto pull
     end
