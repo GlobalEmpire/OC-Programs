@@ -5,15 +5,15 @@ local event = require("event")
 local m = component.modem
 local GERTi = require("GERTiClient")
 local DC = component.data
---if DC.generateKeyPair == nil then print("This service requires a T3 data card to be installed. There is no T3 data card detected by this program. Please ensure that you have a ///T3/// datacard installed, or install the no-encryption version of this program if it exists.") return end
 local shell = require("shell")
 local args, opts = shell.parse(...)
 local fs = request("filesystem")
-local serialization = require("serialization")
+local SRL = require("serialization")
 --Program Variables:
+local PCID = 98
 local ConfigSettings = []
 local SendData = []
-
+local OpenSockets = []
 
 
 --Program Error Codes:
@@ -23,24 +23,63 @@ local INVALIDFILELOCATION = 2
 local INVALIDSERVERADDRESS = 3
 local NILSERVERADDRESS = 4
 local INCOMPATIBLESERVER = 5
+local UNEXPECTEDRESPONSE = 6
+local TIMEOUT = 7
+local MISSINGHARDWARE = 8
 local CONFIGDIRECTORYISFILE = 10
 
 
---OneTimeRun Code:
-
-if fs.isDirectory(".config") then
+--OnRun Code:
+if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
     if fs.exists(".config/.OFTPLIB") then
         local ConfigFile = io.open(".config/.OFTPLIB")
-        ConfigSettings = serialization.unserialize(ConfigSettings:read())
+        ConfigSettings = SRL.unserialize(ConfigSettings:read())
     end
 end
 
+if fs.isDirectory("OpenFTPLIB") then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
+    ::makeDirectories::
+    if not(fs.isDirectory("OpenFTPLIB/Packages")) then
+        if fs.exists("OpenFTPLIB/Packages") then
+            fs.rename("OpenFTPLIB/Packages", "OpenFTPLIB/Packages.oldFile")
+        end
+        fs.makeDirectory("OpenFTPLIB/Packages")
+    end
+    if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
+        if fs.exists("OpenFTPLIB/Downloads") then
+            fs.rename("OpenFTPLIB/Downloads", "OpenFTPLIB/Downloads.oldFile")
+        end
+        fs.makeDirectory("OpenFTPLIB/Downloads")
+    end
+else
+    if fs.exists("OpenFTPLIB") then
+        fs.rename("OpenFTPLIB", "OpenFTPLIB.oldFile")
+    end
+    fs.makeDirectory("OpenFTPLIB")
+    goto makeDirectories
+end
+
+
 --Private Functions:
+local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
+    if eventName == "GERTData" then
+        if connectionID == PCID then
+            if OpenSockets[originAddress] then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+
+
 local function VerifyServer(address,compatibility) -- Verify that the server exists and has a sufficient compatibility level
-    if address then
+    if address then --Verify that the default address or given address isnt nil 
         --Verify Server exists:
         GERTi.send(FTPaddress, "GetVersion")
-        local _, _, _, ServerVersion = event.pull(15, "GERTData") --This is a sub-optimal implementation, as it triggers on the first received message, and ignores future messages. This could/will be bad on computers that directly receive high traffic through GERT. When possible, implement a system that checks that it was a response from the server you asked.
+        local _, _, _, ServerVersion = event.pull(15, "GERTData") --This is a sub-optimal implementation, as it triggers on the first received message, and ignores future messages. This could/will be bad on computers that directly receive high traffic through GERT. When possible, implement a system that checks that it was a response from the server you asked. -- Idea: Use event.pullFiltered()
         --Verify Compatibility:
         if ServerVersion then 
             if ServerVersion >= compatibility then
@@ -66,30 +105,160 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
     if PackageName then
         VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local FTPSocket = GERTi.openSocket(GivenServer, true, 98) --Open Server Connection
+            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
-            while CID ~= 98 do
+            while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
             end
-            SendData["Mode"] = "RequestPackage"
+            SendData["Mode"] = "RequestPackage" --setup data to send
             SendData["Name"] = tostring(PackageName)
-            if ServerResponse then
-                --Receive Package
-                --Close server connection
-                --Return package installer location
-            else
-                return false, FILENOTFOUND
+            local receiving = true --setup the while loop
+            local ReceivedData = ""
+            while receiving do 
+                OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
+                local originAddress = 0.0
+                local NoError = ""
+                local ServerResponse = ""
+                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                    NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
+                end
+                if NoError then --if it didnt time out:
+                    local TempData =  tostring(OpenSockets[GivenServer]:read())
+                    ReceivedData = ReceivedData .. TempData
+                    if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                        receiving = false --Tidy up
+                        OpenSockets[GivenServer]:close()
+                        if SRL.unserialize(ReceivedData)["PackageName"] == nil then
+                            return false, FILENOTFOUND
+                        end
+                        local packageFile = io.open("OpenFTPLIB/Packages/" .. tostring(PackageName), "w") --Overwrites any existing file. This is intentional
+                        packageFile:write(ReceivedData)
+                        packageFile:close()
+                        return true, "OpenFTPLIB/Packages/" .. tostring(PackageName)
+                    end
+                else
+                    OpenSockets[GivenServer]:close()
+                    return false, TIMEOUT
+                end
             end
         else
             return VerSer, code
-        
         end
+    else
+        return false, FILENOTFOUND
     end
 end
 
 function RequestFile(FileName,GivenServer,User,Password) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if user == nil then
+        if FileName then
+            VerSer, code = VerifyServer(GivenServer, Compatibility)
+            if VerSer then
+                local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+                local CID = 0 --Wait for server to open back
+                while CID ~= PCID do
+                    _, _, CID = event.pull("GERTConnectionID")
+                end
+                SendData["Mode"] = "RequestPublicFile" --setup data to send
+                SendData["Name"] = tostring(FileName)
+                local receiving = true --setup the while loop
+                local ReceivedData = ""
+                while receiving do 
+                    OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
+                    local originAddress = 0.0
+                    local NoError = ""
+                    local ServerResponse = ""
+                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                        NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
+                    end
+                    if NoError then --if it didnt time out:
+                        local TempData =  tostring(OpenSockets[GivenServer]:read())
+                        ReceivedData = ReceivedData .. TempData
+                        if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                            receiving = false --Tidy up
+                            OpenSockets[GivenServer]:close()
+                            local FileTable = SRL.unserialize(ReceivedData)
+                            if FileTable["FileName"] == FileName then
+                                local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
+                                File:write(FileTable["Content"])
+                                File:close()
+                                return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
+                            else
+                                return false, FILENOTFOUND
+                            end
+                        end
+                    else
+                        OpenSockets[GivenServer]:close()
+                        return false, TIMEOUT
+                    end
+                end
+            else
+                return VerSer, code
+            end
+        else
+            return false, FILENOTFOUND
+        end
+    else
+        if DC.generateKeyPair == nil then 
+            return false, MISSINGHARDWARE
+        end
+        if FileName then
+            VerSer, code = VerifyServer(GivenServer, Compatibility)
+            if VerSer then
+                local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+                local CID = 0 --Wait for server to open back
+                while CID ~= PCID do
+                    _, _, CID = event.pull("GERTConnectionID")
+                end
+                SendData["Mode"] = "RequestPrivateFile" --setup data to send
+                SendData["Name"] = tostring(FileName)
+                SendData["User"] = User
+                local PuKey, PrKey = DC.generateKeyPair()
+                SendData["PasswordSignature"] = ecdsa(Password,PrKey)
+                SendDate["PuKey"] = PuKey.serialize()
+                local receiving = true --setup the while loop
+                local ReceivedData = ""
+                while receiving do 
+                    OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
+                    local originAddress = 0.0
+                    local NoError = ""
+                    local ServerResponse = ""
+                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                        NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
+                    end
+                    if NoError then --if it didnt time out:
+                        local TempData =  tostring(OpenSockets[GivenServer]:read())
+                        ReceivedData = ReceivedData .. TempData
+                        if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                            receiving = false --Tidy up
+                            OpenSockets[GivenServer]:close()
+                            local FileTable = SRL.unserialize(ReceivedData)
+                            if FileTable["UserValid"] then
+                                local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
+                                File:write(FileTable["Content"])
+                                File:close()
+                                return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
+                            else
+                                return false, INVALIDCREDENTIALS
+                            end
+                        end
+                    else
+                        OpenSockets[GivenServer]:close()
+                        return false, TIMEOUT
+                    end
+                end
+            else
+                return VerSer, code
+            end
+        else
+            return false, FILENOTFOUND
+        end
+    end
+
+
+
+
         if VerifyServer(GivenServer, Compatibility) then
             --Open Server Connection
             --Request File from server
@@ -123,7 +292,7 @@ if args[1] == "setup" then
     if fs.exists(".config") then
         if fs.isDirectory(".config") then
             local ConfigFile = io.open(".config/.OFTPLIB", "w")
-            ConfigFile:write(serialization.serialize(ConfigSettings))
+            ConfigFile:write(SRL.serialize(ConfigSettings))
             ConfigFile:close()
         else
             print(false)
@@ -132,7 +301,7 @@ if args[1] == "setup" then
     else
         fs.makeDirectory(".config")
         local ConfigFile = io.open(".config/.OFTPLIB", "w")
-        ConfigFile:write(serialization.serialize(ConfigSettings))
+        ConfigFile:write(SRL.serialize(ConfigSettings))
         ConfigFile:close()
     end
 end
