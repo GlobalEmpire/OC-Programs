@@ -125,7 +125,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
                 if NoError then --if it didnt time out:
                     local TempData =  tostring(OpenSockets[GivenServer]:read())
                     ReceivedData = ReceivedData .. TempData
-                    if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                    if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                         receiving = false --Tidy up
                         OpenSockets[GivenServer]:close()
                         if SRL.unserialize(ReceivedData)["PackageName"] == nil then
@@ -175,7 +175,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read())
                         ReceivedData = ReceivedData .. TempData
-                        if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                        if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             receiving = false --Tidy up
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
@@ -216,7 +216,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                 SendData["User"] = User
                 local PuKey, PrKey = DC.generateKeyPair()
                 SendData["PasswordSignature"] = ecdsa(Password,PrKey)
-                SendDate["PuKey"] = PuKey.serialize()
+                SendData["PuKey"] = PuKey.serialize()
                 local receiving = true --setup the while loop
                 local ReceivedData = ""
                 while receiving do 
@@ -230,15 +230,21 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read())
                         ReceivedData = ReceivedData .. TempData
-                        if len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
+                        if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             receiving = false --Tidy up
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
                             if FileTable["UserValid"] then
-                                local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
-                                File:write(FileTable["Content"])
-                                File:close()
-                                return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
+                                if FileTable["FileName"] == FileName then
+                                    local SharedSecret = DC.ecdh(PrKey, FileTable["PuKey"])
+                                    local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
+                                    local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
+                                    File:write(DC.decrypt(FileTable["Content"],TruncatedSHA256Key,1))
+                                    File:close()
+                                    return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
+                                else
+                                    return false, FILENOTFOUND
+                                end
                             else
                                 return false, INVALIDCREDENTIALS
                             end
@@ -255,35 +261,13 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
             return false, FILENOTFOUND
         end
     end
-
-
-
-
-        if VerifyServer(GivenServer, Compatibility) then
-            --Open Server Connection
-            --Request File from server
-            --Receive File
-            --Close server connection
-            --Return package installer location
-
-        end
-    else
-        if VerifyServer(GivenServer, Compatibility) then
-            --Open Server Connection
-            if VerifyCredentials(User,Password) then
-                --Request File from server
-                --Receive File
-                --Close server connection
-                --Return package installer location
-            else
-                return false, INVALIDCREDENTIALS
-            end
-        end
-    end
 end
 
 function SendFile(FileName,GivenServer,User,Password)
-
+    GivenServer = GivenServer or DefaultServer
+    if FileName then
+        
+    end
 end
 
 --For manual execution, or .shrc
