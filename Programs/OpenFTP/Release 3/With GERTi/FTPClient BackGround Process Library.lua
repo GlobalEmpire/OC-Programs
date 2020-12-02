@@ -103,7 +103,7 @@ end
 function RequestPackage(PackageName,GivenServer) -- This function is for requesting packages from the set FTP server. Packages are always public.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if PackageName then
-        VerSer, code = VerifyServer(GivenServer, Compatibility)
+        local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
@@ -153,7 +153,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if user == nil then
         if FileName then
-            VerSer, code = VerifyServer(GivenServer, Compatibility)
+            local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
                 local CID = 0 --Wait for server to open back
@@ -204,7 +204,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
             return false, MISSINGHARDWARE
         end
         if FileName then
-            VerSer, code = VerifyServer(GivenServer, Compatibility)
+            local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
                 local CID = 0 --Wait for server to open back
@@ -266,8 +266,35 @@ end
 function SendFile(FileName,GivenServer,User,Password)
     GivenServer = GivenServer or DefaultServer
     if FileName then
-        
+        local VerSer, code = VerifyServer(GivenServer, Compatibility)
+        if VerSer then
+            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            local CID = 0 --Wait for server to open back
+            while CID ~= PCID do
+                _, _, CID = event.pull("GERTConnectionID")
+            end
+            SendData["Mode"] = "SendPrivateFile" --setup data to send
+            SendData["Name"] = tostring(FileName)
+            SendData["User"] = User
+            local PuKey, PrKey = DC.generateKeyPair()
+            SendData["PasswordSignature"] = ecdsa(Password,PrKey)
+            SendData["PuKey"] = PuKey.serialize()
+        else
+            return false, INVALIDSERVERADDRESS
+        end
     end
+end
+
+function CreateRemoteUser(User,Password)
+
+end
+
+function DeleteRemoteUser(User,Password)
+
+end
+
+function DeleteRemoteFile(FileName,User,Password)
+
 end
 
 --For manual execution, or .shrc
