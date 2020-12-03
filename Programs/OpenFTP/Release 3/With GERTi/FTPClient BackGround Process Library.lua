@@ -9,12 +9,12 @@ local shell = require("shell")
 local args, opts = shell.parse(...)
 local fs = request("filesystem")
 local SRL = require("serialization")
+
 --Program Variables:
 local PCID = 98
 local ConfigSettings = []
 local SendData = []
 local OpenSockets = []
-
 
 --Program Error Codes:
 local FILENOTFOUND = 0
@@ -27,7 +27,6 @@ local UNEXPECTEDRESPONSE = 6
 local TIMEOUT = 7
 local MISSINGHARDWARE = 8
 local CONFIGDIRECTORYISFILE = 10
-
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -59,7 +58,6 @@ else
     goto makeDirectories
 end
 
-
 --Private Functions:
 local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
     if eventName == "GERTData" then
@@ -71,9 +69,6 @@ local function FilterResponse(eventName, originAddress, connectionID) --Filters 
     end
     return false
 end
-
-
-
 
 local function VerifyServer(address,compatibility) -- Verify that the server exists and has a sufficient compatibility level
     if address then --Verify that the default address or given address isnt nil 
@@ -279,6 +274,18 @@ function SendFile(FileName,GivenServer,User,Password)
             local PuKey, PrKey = DC.generateKeyPair()
             SendData["PasswordSignature"] = ecdsa(Password,PrKey)
             SendData["PuKey"] = PuKey.serialize()
+            local SendingData = SRL.serialize(SendData)
+            local Sending = true
+            while Sending do
+                if string.len(SendingData) > m.maxPacketSize() - 512 then
+                    local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
+                    SendingData = string.sub(SendingData,m.maxPacketSize())
+                    OpenSockets[GivenServer]:write(tempSend)
+                else
+                    OpenSockets[GivenServer]:write(SendingData)
+                    OpenSockets[GivenServer]:close()
+                end
+            end
         else
             return false, INVALIDSERVERADDRESS
         end
