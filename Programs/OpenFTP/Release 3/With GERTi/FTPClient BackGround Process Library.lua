@@ -346,62 +346,66 @@ end
 
 function CreateRemoteUser(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
-    local VerSer, code = VerifyServer(GivenServer, Compatibility)
-    if VerSer and Password and User then
-        local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-        local CID = 0 --Wait for server to open back
-        while CID ~= PCID do
-            _, _, CID = event.pull("GERTConnectionID")
-        end
-        SendData["Mode"] = "CreateUser" --setup data to send
-        local PuKey, PrKey = DC.generateKeyPair()
-        SendData["PuKey"] = PuKey.serialize()
-        local SendingData = SRL.serialize(SendData)
-        local Sending = true
-        while Sending do
-            OpenSockets[GivenServer]:write(SendingData)
-            local originAddress = 0.0
-            local NoError = ""
-            while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+    if Password and user then
+        local VerSer, code = VerifyServer(GivenServer, Compatibility)
+        if VerSer then
+            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            local CID = 0 --Wait for server to open back
+            while CID ~= PCID do
+                _, _, CID = event.pull("GERTConnectionID")
             end
-            if NoError then
-                local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
-                if ServerResponse["State"] == "Ready" then
-                    local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
-                    local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
-                    SendData["User"] = DC.encrypt(User,TruncatedSHA256Key,1)
-                    SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
-                    SendingData = SRL.serialize(SendData)
-                    OpenSockets[GivenServer]:write(SendingData)
-                    local originAddress = 0.0
-                    local NoError = ""
-                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                        NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                    end
-                    if NoError then
-                        local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
-                        if ServerResponse["State"] == "Ready" then
-                            OpenSockets[GivenServer]:close()
-                            return true, 0
+            SendData["Mode"] = "CreateUser" --setup data to send
+            local PuKey, PrKey = DC.generateKeyPair()
+            SendData["PuKey"] = PuKey.serialize()
+            local SendingData = SRL.serialize(SendData)
+            local Sending = true
+            while Sending do
+                OpenSockets[GivenServer]:write(SendingData)
+                local originAddress = 0.0
+                local NoError = ""
+                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                end
+                if NoError then
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    if ServerResponse["State"] == "Ready" then
+                        local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
+                        local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
+                        SendData["User"] = DC.encrypt(User,TruncatedSHA256Key,1)
+                        SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
+                        SendingData = SRL.serialize(SendData)
+                        OpenSockets[GivenServer]:write(SendingData)
+                        local originAddress = 0.0
+                        local NoError = ""
+                        while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                            NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                        end
+                        if NoError then
+                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                            if ServerResponse["State"] == "Ready" then
+                                OpenSockets[GivenServer]:close()
+                                return true, 0
+                            else
+                                OpenSockets[GivenServer]:close()
+                                return false, ServerSideErrors[ServerResponse["State"]] 
+                            end
                         else
                             OpenSockets[GivenServer]:close()
-                            return false, ServerSideErrors[ServerResponse["State"]] 
+                            return false, TIMEOUT
                         end
+                        return true, 0
                     else
-                        OpenSockets[GivenServer]:close()
-                        return false, TIMEOUT
+                        return false, ServerSideErrors[ServerResponse["State"]]
                     end
-                    return true, 0
                 else
-                    return false, ServerSideErrors[ServerResponse["State"]]
+                    return false, TIMEOUT
                 end
-            else
-                return false, TIMEOUT
             end
+        else
+            return false, INVALIDSERVERADDRESS
         end
     else
-        return false, INVALIDSERVERADDRESS
+        return false, INVALIDCREDENTIALS
     end
 end
 
