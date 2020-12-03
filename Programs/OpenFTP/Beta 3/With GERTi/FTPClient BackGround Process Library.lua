@@ -17,26 +17,16 @@ local SendData = []
 local OpenSockets = []
 
 --Program Error Codes:
-local UNKNOWNERROR = 0
-local FILENOTFOUND = 1
-local INVALIDCREDENTIALS = 2
-local INVALIDFILELOCATION = 3
-local INVALIDSERVERADDRESS = 4
-local NILSERVERADDRESS = 5
-local INCOMPATIBLESERVER = 6
-local UNEXPECTEDRESPONSE = 7
-local TIMEOUT = 8
-local MISSINGHARDWARE = 9
-local FILEEXISTS = 10
-local NOSPACE = 11
-local CONFIGDIRECTORYISFILE = 20
-
-
-local ServerSideErrors = []
-ServerSideErrors["Ready"] = UNKNOWNERROR
-ServerSideErrors["FileExists"] = FILEEXISTS
-ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
-ServerSideErrors["InsufficientSpace"] = NOSPACE
+local FILENOTFOUND = 0
+local INVALIDCREDENTIALS = 1
+local INVALIDFILELOCATION = 2
+local INVALIDSERVERADDRESS = 3
+local NILSERVERADDRESS = 4
+local INCOMPATIBLESERVER = 5
+local UNEXPECTEDRESPONSE = 6
+local TIMEOUT = 7
+local MISSINGHARDWARE = 8
+local CONFIGDIRECTORYISFILE = 10
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -239,7 +229,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                             receiving = false --Tidy up
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
-                            if FileTable["State"] == "Ready" then
+                            if FileTable["UserValid"] then
                                 if FileTable["FileName"] == FileName then
                                     local SharedSecret = DC.ecdh(PrKey, FileTable["PuKey"])
                                     local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
@@ -251,7 +241,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                                     return false, FILENOTFOUND
                                 end
                             else
-                                return false, ServerSideErrors[FileTable["State"]]
+                                return false, INVALIDCREDENTIALS
                             end
                         end
                     else
@@ -268,9 +258,9 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
     end
 end
 
-function SendFile(FilePath,GivenServer,User,Password)
+function SendFile(FileName,GivenServer,User,Password)
     GivenServer = GivenServer or DefaultServer
-    if FilePath then
+    if FileName then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
@@ -279,55 +269,21 @@ function SendFile(FilePath,GivenServer,User,Password)
                 _, _, CID = event.pull("GERTConnectionID")
             end
             SendData["Mode"] = "SendPrivateFile" --setup data to send
-            SendData["Name"] = fs.name(FilePath)
+            SendData["Name"] = tostring(FileName)
             SendData["User"] = User
             local PuKey, PrKey = DC.generateKeyPair()
             SendData["PasswordSignature"] = ecdsa(Password,PrKey)
             SendData["PuKey"] = PuKey.serialize()
-            SendData["Size"] = fs.size(FilePath)
             local SendingData = SRL.serialize(SendData)
             local Sending = true
-            local FileData = io.open(FilePath, "r")
-            local EncodedFileData = ""
             while Sending do
-                OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
-                if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
-                    if ServerResponse["State"] == "Ready" then
-                        if SendData["Content"] == nil then
-                            local SharedSecret = DC.ecdh("PrKey", ServerResponse["PuKey"])
-                            local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
-                            SendData = []
-                            SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
-                            SendData["Name"] = fs.name(FilePath)
-                            SendingData = SRL.serialize(SendData)
-                        end
-                        if string.len(SendingData) > m.maxPacketSize() - 512 then
-                            local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
-                            SendingData = string.sub(SendingData,m.maxPacketSize())
-                            OpenSockets[GivenServer]:write(tempSend)
-                        else
-                            OpenSockets[GivenServer]:write(SendingData)
-                            OpenSockets[GivenServer]:close()
-                            Sending = false
-                            FileData:close()
-                        end
-                    else
-                        Sending = false
-                        FileData:close()
-                        OpenSockets[GivenServer]:close()
-                        return false, ServerSideErrors[ServerResponse["State"]]    
-                    end
+                if string.len(SendingData) > m.maxPacketSize() - 512 then
+                    local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
+                    SendingData = string.sub(SendingData,m.maxPacketSize())
+                    OpenSockets[GivenServer]:write(tempSend)
                 else
-                    Sending = false
-                    FileData:close()
+                    OpenSockets[GivenServer]:write(SendingData)
                     OpenSockets[GivenServer]:close()
-                    return false, TIMEOUT
                 end
             end
         else
