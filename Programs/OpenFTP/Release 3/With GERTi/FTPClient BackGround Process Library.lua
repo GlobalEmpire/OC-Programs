@@ -29,6 +29,7 @@ local TIMEOUT = 8
 local MISSINGHARDWARE = 9
 local FILEEXISTS = 10
 local NOSPACE = 11
+local USERCREATIONERROR = 12
 local CONFIGDIRECTORYISFILE = 20
 
 
@@ -37,6 +38,7 @@ ServerSideErrors["Ready"] = UNKNOWNERROR
 ServerSideErrors["FileExists"] = FILEEXISTS
 ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
 ServerSideErrors["InsufficientSpace"] = NOSPACE
+ServerSideErrors["UserCreationError"] = USERCREATIONERROR
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -100,7 +102,7 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
     end
 end
 
-local function VerifyCredentials(User,Password)
+local function VerifyCredentials(Password,User)
 
 end
 
@@ -154,7 +156,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
     end
 end
 
-function RequestFile(FileName,GivenServer,User,Password) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
+function RequestFile(FileName,GivenServer,Password,User) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if user == nil then
         if FileName then
@@ -241,7 +243,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                             local FileTable = SRL.unserialize(ReceivedData)
                             if FileTable["State"] == "Ready" then
                                 if FileTable["FileName"] == FileName then
-                                    local SharedSecret = DC.ecdh(PrKey, FileTable["PuKey"])
+                                    local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(FileTable["PuKey"]))
                                     local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
                                     local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
                                     File:write(DC.decrypt(FileTable["Content"],TruncatedSHA256Key,1))
@@ -268,7 +270,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
     end
 end
 
-function SendFile(FilePath,GivenServer,User,Password)
+function SendFile(FilePath,GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     if FilePath then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -280,9 +282,9 @@ function SendFile(FilePath,GivenServer,User,Password)
             end
             SendData["Mode"] = "SendPrivateFile" --setup data to send
             SendData["Name"] = fs.name(FilePath)
-            SendData["User"] = User
+            SendData["User"] = User or "Public"
             local PuKey, PrKey = DC.generateKeyPair()
-            SendData["PasswordSignature"] = ecdsa(Password,PrKey)
+            SendData["PasswordSignature"] = ecdsa(Password or "Default",PrKey)
             SendData["PuKey"] = PuKey.serialize()
             SendData["Size"] = fs.size(FilePath)
             local SendingData = SRL.serialize(SendData)
@@ -300,7 +302,7 @@ function SendFile(FilePath,GivenServer,User,Password)
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
                     if ServerResponse["State"] == "Ready" then
                         if SendData["Content"] == nil then
-                            local SharedSecret = DC.ecdh("PrKey", ServerResponse["PuKey"])
+                            local SharedSecret = DC.ecdh("PrKey", DC.deserializeKey(ServerResponse["PuKey"]))
                             local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
                             SendData = []
                             SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
@@ -316,6 +318,7 @@ function SendFile(FilePath,GivenServer,User,Password)
                             OpenSockets[GivenServer]:write(SendingData)
                             OpenSockets[GivenServer]:close()
                             Sending = false
+                            return true, 0
                         end
                     else
                         Sending = false
@@ -333,41 +336,52 @@ function SendFile(FilePath,GivenServer,User,Password)
         else
             return false, INVALIDSERVERADDRESS
         end
+    else
+        return false, FILENOTFOUND
     end
 end
 
-function CreateRemoteUser(GivenServer,User,Password)
+function CreateRemoteUser(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
-    if FilePath then
-        local VerSer, code = VerifyServer(GivenServer, Compatibility)
-        if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
-            end
-            SendData["Mode"] = "CreateUser" --setup data to send
-            local PuKey, PrKey = DC.generateKeyPair()
-            SendData["PuKey"] = PuKey.serialize()
-            local SendingData = SRL.serialize(SendData)
-            local Sending = true
-            while Sending do
-                OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
-                if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
-
-                else
-                    return false, TIMEOUT
-                end
-            end
-        else
-            return false, INVALIDSERVERADDRESS
+    local VerSer, code = VerifyServer(GivenServer, Compatibility)
+    if VerSer then
+        local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+        local CID = 0 --Wait for server to open back
+        while CID ~= PCID do
+            _, _, CID = event.pull("GERTConnectionID")
         end
+        SendData["Mode"] = "CreateUser" --setup data to send
+        local PuKey, PrKey = DC.generateKeyPair()
+        SendData["PuKey"] = PuKey.serialize()
+        local SendingData = SRL.serialize(SendData)
+        local Sending = true
+        while Sending do
+            OpenSockets[GivenServer]:write(SendingData)
+            local originAddress = 0.0
+            local NoError = ""
+            while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+            end
+            if NoError then
+                local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                if ServerResponse["State"] == "Ready" then
+                    local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
+                    local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
+                    SendData["User"] = DC.encrypt(User,TruncatedSHA256Key,1)
+                    SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
+                    SendingData = SRL.serialize(SendData)
+                    OpenSockets[GivenServer]:write(SendingData)
+                    OpenSockets[GivenServer]:close()
+                    return true, 0
+                else
+                    return false, ServerSideErrors[ServerResponse["State"]]
+                end
+            else
+                return false, TIMEOUT
+            end
+        end
+    else
+        return false, INVALIDSERVERADDRESS
     end
 end
 
