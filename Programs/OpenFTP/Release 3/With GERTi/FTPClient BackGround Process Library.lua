@@ -30,6 +30,7 @@ local MISSINGHARDWARE = 9
 local FILEEXISTS = 10
 local NOSPACE = 11
 local USERCREATIONERROR = 12
+local USEREXISTS = 13
 local CONFIGDIRECTORYISFILE = 20
 
 
@@ -39,6 +40,8 @@ ServerSideErrors["FileExists"] = FILEEXISTS
 ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
 ServerSideErrors["InsufficientSpace"] = NOSPACE
 ServerSideErrors["UserCreationError"] = USERCREATIONERROR
+ServerSideErrors["UserExists"] = USEREXISTS
+
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -344,7 +347,7 @@ end
 function CreateRemoteUser(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     local VerSer, code = VerifyServer(GivenServer, Compatibility)
-    if VerSer then
+    if VerSer and Password and User then
         local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
         local CID = 0 --Wait for server to open back
         while CID ~= PCID do
@@ -371,7 +374,24 @@ function CreateRemoteUser(GivenServer,Password,User)
                     SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
                     SendingData = SRL.serialize(SendData)
                     OpenSockets[GivenServer]:write(SendingData)
-                    OpenSockets[GivenServer]:close()
+                    local originAddress = 0.0
+                    local NoError = ""
+                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                        NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                    end
+                    if NoError then
+                        local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                        if ServerResponse["State"] == "Ready" then
+                            OpenSockets[GivenServer]:close()
+                            return true, 0
+                        else
+                            OpenSockets[GivenServer]:close()
+                            return false, ServerSideErrors[ServerResponse["State"]] 
+                        end
+                    else
+                        OpenSockets[GivenServer]:close()
+                        return false, TIMEOUT
+                    end
                     return true, 0
                 else
                     return false, ServerSideErrors[ServerResponse["State"]]
@@ -385,15 +405,15 @@ function CreateRemoteUser(GivenServer,Password,User)
     end
 end
 
-function DeleteRemoteUser(GivenServer,User,Password)
+function DeleteRemoteUser(GivenServer,Password,User)
 
 end
 
-function DeleteRemoteFile(GivenServer,FileName,User,Password)
+function DeleteRemoteFile(GivenServer,FileName,Password,User)
 
 end
 
-function GetFileList(GivenServer,User,Password)
+function GetFileList(GivenServer,Password,User)
 
 end
 
