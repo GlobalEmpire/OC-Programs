@@ -304,18 +304,18 @@ function SendFile(FilePath,GivenServer,User,Password)
                             local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
                             SendData = []
                             SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
+                            FileData:close()
                             SendData["Name"] = fs.name(FilePath)
                             SendingData = SRL.serialize(SendData)
                         end
                         if string.len(SendingData) > m.maxPacketSize() - 512 then
                             local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
-                            SendingData = string.sub(SendingData,m.maxPacketSize())
+                            SendingData = string.sub(SendingData,m.maxPacketSize()-512)
                             OpenSockets[GivenServer]:write(tempSend)
                         else
                             OpenSockets[GivenServer]:write(SendingData)
                             OpenSockets[GivenServer]:close()
                             Sending = false
-                            FileData:close()
                         end
                     else
                         Sending = false
@@ -336,15 +336,50 @@ function SendFile(FilePath,GivenServer,User,Password)
     end
 end
 
-function CreateRemoteUser(User,Password)
+function CreateRemoteUser(GivenServer,User,Password)
+    GivenServer = GivenServer or DefaultServer
+    if FilePath then
+        local VerSer, code = VerifyServer(GivenServer, Compatibility)
+        if VerSer then
+            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            local CID = 0 --Wait for server to open back
+            while CID ~= PCID do
+                _, _, CID = event.pull("GERTConnectionID")
+            end
+            SendData["Mode"] = "CreateUser" --setup data to send
+            local PuKey, PrKey = DC.generateKeyPair()
+            SendData["PuKey"] = PuKey.serialize()
+            local SendingData = SRL.serialize(SendData)
+            local Sending = true
+            while Sending do
+                OpenSockets[GivenServer]:write(SendingData)
+                local originAddress = 0.0
+                local NoError = ""
+                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                end
+                if NoError then
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+
+                else
+                    return false, TIMEOUT
+                end
+            end
+        else
+            return false, INVALIDSERVERADDRESS
+        end
+    end
+end
+
+function DeleteRemoteUser(GivenServer,User,Password)
 
 end
 
-function DeleteRemoteUser(User,Password)
+function DeleteRemoteFile(GivenServer,FileName,User,Password)
 
 end
 
-function DeleteRemoteFile(FileName,User,Password)
+function GetFileList(GivenServer,User,Password)
 
 end
 
