@@ -16,6 +16,7 @@ local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
 
+
 --Program Error Codes:
 local UNKNOWNERROR = 0
 local FILENOTFOUND = 1
