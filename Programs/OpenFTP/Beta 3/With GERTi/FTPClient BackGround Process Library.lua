@@ -72,7 +72,7 @@ if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
     end
     fs.makeDirectory("OpenFTPLIB/Downloads")
 end
-else
+
 
 --Private Functions:
 local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
