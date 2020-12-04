@@ -1,16 +1,16 @@
---Initialisation
-local Compatibility = "Beta3.0"
-local component = require("component")
-local event = require("event")
-local m = component.modem
-local GERTi = require("GERTiClient")
-local DC = component.data
+--Libraries
 local shell = require("shell")
 local args, opts = shell.parse(...)
+local component = require("component")
+local m = component.modem
+local DC = component.data
+local event = require("event")
+local GERTi = require("GERTiClient")
 local fs = require("filesystem")
 local SRL = require("serialization")
 
 --Program Variables:
+local Compatibility = "Beta3.0"
 local PCID = 98
 local ConfigSettings = {}
 local SendData = {}
@@ -43,10 +43,10 @@ ServerSideErrors["UserModificationError"] = USERMODIFICATIONERROR
 ServerSideErrors["UserExists"] = USEREXISTS
 ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
 
---OnRun Code:
+--Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
     if fs.exists(".config/.OFTPLIB") then
-        local ConfigFile = io.open(".config/.OFTPLIB")
+        local ConfigFile = io.open("/.config/.OFTPLIB")
         ConfigSettings = SRL.unserialize(ConfigSettings:read())
     end
 end
@@ -133,7 +133,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
                         if SRL.unserialize(ReceivedData)["PackageName"] == nil then
                             return false, FILENOTFOUND
                         end
-                        local packageFile = io.open("OpenFTPLIB/Packages/" .. tostring(PackageName), "w") --Overwrites any existing file. This is intentional
+                        local packageFile = io.open("/OpenFTPLIB/Packages/" .. tostring(PackageName), "w") --Overwrites any existing file. This is intentional
                         packageFile:write(ReceivedData)
                         packageFile:close()
                         return true, "OpenFTPLIB/Packages/" .. tostring(PackageName)
@@ -182,7 +182,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
                             if FileTable["FileName"] == FileName then
-                                local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
+                                local File = io.open("/OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
                                 File:write(FileTable["Content"])
                                 File:close()
                                 return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
@@ -240,7 +240,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                                 if FileTable["FileName"] == FileName then
                                     local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(FileTable["PuKey"]))
                                     local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
-                                    local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
+                                    local File = io.open("/OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
                                     File:write(DC.decrypt(FileTable["Content"],TruncatedSHA256Key,1))
                                     File:close()
                                     return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
@@ -284,7 +284,7 @@ function SendFile(FilePath,GivenServer,Password,User)
             SendData["Size"] = fs.size(FilePath)
             local SendingData = SRL.serialize(SendData)
             local Sending = true
-            local FileData = io.open(FilePath, "r")
+            local FileData = io.open("/" .. fs.canonical(FilePath), "r")
             local EncodedFileData = ""
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
@@ -577,7 +577,7 @@ if args[1] == "setup" then
     ConfigSettings["DefaultServer"] = args[2]
     if fs.exists(".config") then
         if fs.isDirectory(".config") then
-            local ConfigFile = io.open(".config/.OFTPLIB", "w")
+            local ConfigFile = io.open("/.config/.OFTPLIB", "w")
             ConfigFile:write(SRL.serialize(ConfigSettings))
             ConfigFile:close()
         else
@@ -586,7 +586,7 @@ if args[1] == "setup" then
         end
     else
         fs.makeDirectory(".config")
-        local ConfigFile = io.open(".config/.OFTPLIB", "w")
+        local ConfigFile = io.open("/.config/.OFTPLIB", "w")
         ConfigFile:write(SRL.serialize(ConfigSettings))
         ConfigFile:close()
     end
