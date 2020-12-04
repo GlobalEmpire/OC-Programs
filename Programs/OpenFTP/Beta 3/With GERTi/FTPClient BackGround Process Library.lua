@@ -7,7 +7,7 @@ local GERTi = require("GERTiClient")
 local DC = component.data
 local shell = require("shell")
 local args, opts = shell.parse(...)
-local fs = request("filesystem")
+local fs = require("filesystem")
 local SRL = require("serialization")
 
 --Program Variables:
