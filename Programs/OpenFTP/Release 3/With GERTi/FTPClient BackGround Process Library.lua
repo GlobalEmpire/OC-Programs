@@ -95,10 +95,10 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
             if ServerVersion >= compatibility then
                 return true, 0
             else
-                return false, INVALIDSERVERADDRESS
+                return false, INCOMPATIBLESERVER
             end
         else
-            return false, INCOMPATIBLESERVER
+            return false, INVALIDSERVERADDRESS
         end
     else
         return false, NILSERVERADDRESS
