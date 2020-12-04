@@ -1,4 +1,4 @@
---Libraries
+--Libraries/APIs
 local shell = require("shell")
 local args, opts = shell.parse(...)
 local component = require("component")
@@ -15,7 +15,6 @@ local PCID = 98
 local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
-
 
 --Program Error Codes:
 local UNKNOWNERROR = 0
@@ -126,7 +125,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
                     NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
                 end
                 if NoError then --if it didnt time out:
-                    local TempData =  tostring(OpenSockets[GivenServer]:read())
+                    local TempData = tostring(OpenSockets[GivenServer]:read()[1])
                     ReceivedData = ReceivedData .. TempData
                     if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                         receiving = false --Tidy up
@@ -176,7 +175,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                         NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
                     end
                     if NoError then --if it didnt time out:
-                        local TempData =  tostring(OpenSockets[GivenServer]:read())
+                        local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
                         if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             receiving = false --Tidy up
@@ -203,7 +202,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
             return false, FILENOTFOUND
         end
     else
-        if DC.generateKeyPair == nil then 
+        if DC.generateKeyPair == nil then
             return false, MISSINGHARDWARE
         end
         if FileName then
@@ -231,7 +230,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                         NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
                     end
                     if NoError then --if it didnt time out:
-                        local TempData =  tostring(OpenSockets[GivenServer]:read())
+                        local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
                         if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             receiving = false --Tidy up
@@ -295,7 +294,7 @@ function SendFile(FilePath,GivenServer,Password,User)
                     NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                 end
                 if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
                         if SendData["Content"] == nil then
                             local SharedSecret = DC.ecdh("PrKey", DC.deserializeKey(ServerResponse["PuKey"]))
@@ -360,7 +359,7 @@ function CreateRemoteUser(GivenServer,Password,User)
                     NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                 end
                 if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
                         local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
                         local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
@@ -374,7 +373,7 @@ function CreateRemoteUser(GivenServer,Password,User)
                             NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                         end
                         if NoError then
-                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
                                 OpenSockets[GivenServer]:close()
                                 return true, 0
@@ -424,7 +423,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
                     NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                 end
                 if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
                         SendData["User"] = User
                         SendData["PasswordSignature"] = DC.ecdsa(Password,PrKey)
@@ -436,7 +435,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
                             NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                         end
                         if NoError then
-                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
                                 OpenSockets[GivenServer]:close()
                                 return true, 0
@@ -488,7 +487,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
                     NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                 end
                 if NoError then
-                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
                         local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
                         local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
@@ -501,7 +500,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
                             NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
                         end
                         if NoError then
-                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
                                 OpenSockets[GivenServer]:close()
                                 return true, 0
@@ -552,7 +551,7 @@ function GetFiles(GivenServer,Password,User)
                 NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
             end
             if NoError then
-                local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                 if ServerResponse["State"] == "Ready" then
                     if User then
                         local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
