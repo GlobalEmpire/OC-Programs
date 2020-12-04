@@ -12,9 +12,9 @@ local SRL = require("serialization")
 
 --Program Variables:
 local PCID = 98
-local ConfigSettings = []
-local SendData = []
-local OpenSockets = []
+local ConfigSettings = {}
+local SendData = {}
+local OpenSockets = {}
 
 --Program Error Codes:
 local UNKNOWNERROR = 0
@@ -35,7 +35,7 @@ local USERDOESNOTEXIST = 14
 local CONFIGDIRECTORYISFILE = 20
 
 
-local ServerSideErrors = []
+local ServerSideErrors = {}
 ServerSideErrors["Ready"] = UNKNOWNERROR
 ServerSideErrors["FileExists"] = FILEEXISTS
 ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
@@ -310,7 +310,7 @@ function SendFile(FilePath,GivenServer,Password,User)
                         if SendData["Content"] == nil then
                             local SharedSecret = DC.ecdh("PrKey", DC.deserializeKey(ServerResponse["PuKey"]))
                             local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
-                            SendData = []
+                            SendData = {}
                             SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
                             FileData:close()
                             SendData["Name"] = fs.name(FilePath)
