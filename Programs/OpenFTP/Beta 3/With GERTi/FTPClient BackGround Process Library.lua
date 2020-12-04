@@ -1,5 +1,5 @@
 --Initialisation
-local Compatibility = "3.0"
+local Compatibility = "Beta3.0"
 local component = require("component")
 local event = require("event")
 local m = component.modem
@@ -34,7 +34,6 @@ local USEREXISTS = 13
 local USERDOESNOTEXIST = 14
 local CONFIGDIRECTORYISFILE = 20
 
-
 local ServerSideErrors = {}
 ServerSideErrors["Ready"] = UNKNOWNERROR
 ServerSideErrors["FileExists"] = FILEEXISTS
@@ -43,8 +42,6 @@ ServerSideErrors["InsufficientSpace"] = NOSPACE
 ServerSideErrors["UserModificationError"] = USERMODIFICATIONERROR
 ServerSideErrors["UserExists"] = USEREXISTS
 ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
-
-
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -72,7 +69,6 @@ if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
     fs.makeDirectory("OpenFTPLIB/Downloads")
 end
 
-
 --Private Functions:
 local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
     if eventName == "GERTData" then
@@ -92,7 +88,7 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
         local _, _, _, ServerVersion = event.pull(15, "GERTData") --This is a sub-optimal implementation, as it triggers on the first received message, and ignores future messages. This could/will be bad on computers that directly receive high traffic through GERT. When possible, implement a system that checks that it was a response from the server you asked. -- Idea: Use event.pullFiltered()
         --Verify Compatibility:
         if ServerVersion then 
-            if ServerVersion >= compatibility then
+            if ServerVersion == compatibility then
                 return true, 0
             else
                 return false, INCOMPATIBLESERVER
