@@ -56,26 +56,25 @@ end
 
 ::makeDirectories::
 
-if fs.isDirectory("OpenFTPLIB") then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
-    if not(fs.isDirectory("OpenFTPLIB/Packages")) then
-        if fs.exists("OpenFTPLIB/Packages") then
-            fs.rename("OpenFTPLIB/Packages", "OpenFTPLIB/Packages.oldFile")
-        end
-        fs.makeDirectory("OpenFTPLIB/Packages")
-    end
-    if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
-        if fs.exists("OpenFTPLIB/Downloads") then
-            fs.rename("OpenFTPLIB/Downloads", "OpenFTPLIB/Downloads.oldFile")
-        end
-        fs.makeDirectory("OpenFTPLIB/Downloads")
-    end
-else
+if not(fs.isDirectory("OpenFTPLIB")) then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
     if fs.exists("OpenFTPLIB") then
         fs.rename("OpenFTPLIB", "OpenFTPLIB.oldFile")
     end
     fs.makeDirectory("OpenFTPLIB")
-    goto makeDirectories
 end
+if not(fs.isDirectory("OpenFTPLIB/Packages")) then
+    if fs.exists("OpenFTPLIB/Packages") then
+        fs.rename("OpenFTPLIB/Packages", "OpenFTPLIB/Packages.oldFile")
+    end
+    fs.makeDirectory("OpenFTPLIB/Packages")
+end
+if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
+    if fs.exists("OpenFTPLIB/Downloads") then
+        fs.rename("OpenFTPLIB/Downloads", "OpenFTPLIB/Downloads.oldFile")
+    end
+    fs.makeDirectory("OpenFTPLIB/Downloads")
+end
+else
 
 --Private Functions:
 local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
