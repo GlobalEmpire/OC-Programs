@@ -53,7 +53,6 @@ if fs.isDirectory(".config") then -- If the config file exists, read it and load
         ConfigSettings = SRL.unserialize(ConfigSettings:read())
     end
 end
-
 if not(fs.isDirectory("OpenFTPLIB")) then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
     if fs.exists("OpenFTPLIB") then
         fs.rename("OpenFTPLIB", "OpenFTPLIB.oldFile")
@@ -104,10 +103,6 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
     else
         return false, NILSERVERADDRESS
     end
-end
-
-local function VerifyCredentials(Password,User)
-
 end
 
 --Public Functions
@@ -581,7 +576,7 @@ function GetFiles(GivenServer,Password,User)
     end
 end
 
---For manual execution, or .shrc
+--Self-execution, for setup/advanced users
 if args[1] == "setup" then
     ConfigSettings["DefaultServer"] = args[2]
     if fs.exists(".config") then
