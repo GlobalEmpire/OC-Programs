@@ -54,8 +54,9 @@ if fs.isDirectory(".config") then -- If the config file exists, read it and load
     end
 end
 
+::makeDirectories::
+
 if fs.isDirectory("OpenFTPLIB") then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
-    ::makeDirectories::
     if not(fs.isDirectory("OpenFTPLIB/Packages")) then
         if fs.exists("OpenFTPLIB/Packages") then
             fs.rename("OpenFTPLIB/Packages", "OpenFTPLIB/Packages.oldFile")
