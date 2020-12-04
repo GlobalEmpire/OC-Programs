@@ -47,7 +47,8 @@ ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
     if fs.exists(".config/.OFTPLIB") then
         local ConfigFile = io.open("/.config/.OFTPLIB")
-        ConfigSettings = SRL.unserialize(ConfigSettings:read())
+        ConfigSettings = SRL.unserialize(ConfigFile:read())
+        ConfigFile:close()
     end
 end
 if not(fs.isDirectory("OpenFTPLIB")) then -- Ensures that the OpenFTPLIB directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
@@ -70,24 +71,12 @@ if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
 end
 
 --Private Functions:
-local function FilterResponse(eventName, originAddress, connectionID) --Filters out GERTData responses that aren't responding to this program.
-    if eventName == "GERTData" then
-        if connectionID == PCID then
-            if OpenSockets[originAddress] then
-                return true
-            end
-        end
-    end
-    return false
-end
-
 local function VerifyServer(address,compatibility) -- Verify that the server exists and has a sufficient compatibility level
     if address then --Verify that the default address or given address isnt nil 
         --Verify Server exists:
-        GERTi.send(FTPaddress, "GetVersion")
-        local _, _, _, ServerVersion = event.pull(15, "GERTData") --This is a sub-optimal implementation, as it triggers on the first received message, and ignores future messages. This could/will be bad on computers that directly receive high traffic through GERT. When possible, implement a system that checks that it was a response from the server you asked. -- Idea: Use event.pullFiltered()
-        --Verify Compatibility:
-        if ServerVersion then 
+        GERTi.send(address, "GetVersion")
+        local _, _, _, ServerVersion = event.pull(15, "GERTData",address,-1)
+        if ServerVersion then --Verify Compatibility:
             if ServerVersion == compatibility then
                 return true, 0
             else
@@ -108,9 +97,8 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
+            if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                return false, TIMEOUT
             end
             SendData["Mode"] = "RequestPackage" --setup data to send
             SendData["Name"] = tostring(PackageName)
@@ -158,9 +146,8 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-                local CID = 0 --Wait for server to open back
-                while CID ~= PCID do
-                    _, _, CID = event.pull("GERTConnectionID")
+                if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                    return false, TIMEOUT
                 end
                 SendData["Mode"] = "RequestPublicFile" --setup data to send
                 SendData["Name"] = tostring(FileName)
@@ -168,12 +155,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                 local ReceivedData = ""
                 while receiving do 
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
-                    local originAddress = 0.0
-                    local NoError = ""
-                    local ServerResponse = ""
-                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                        NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
-                    end
+                    NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
@@ -209,9 +191,8 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-                local CID = 0 --Wait for server to open back
-                while CID ~= PCID do
-                    _, _, CID = event.pull("GERTConnectionID")
+                if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                    return false, TIMEOUT
                 end
                 SendData["Mode"] = "RequestPrivateFile" --setup data to send
                 SendData["Name"] = tostring(FileName)
@@ -223,12 +204,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                 local ReceivedData = ""
                 while receiving do 
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
-                    local originAddress = 0.0
-                    local NoError = ""
-                    local ServerResponse = ""
-                    while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                        NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
-                    end
+                    NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
@@ -271,9 +247,8 @@ function SendFile(FilePath,GivenServer,Password,User)
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
+            if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                return false, TIMEOUT
             end
             SendData["Mode"] = "SendPrivateFile" --setup data to send
             SendData["Name"] = fs.name(FilePath)
@@ -288,11 +263,7 @@ function SendFile(FilePath,GivenServer,Password,User)
             local EncodedFileData = ""
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
+                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -342,9 +313,8 @@ function CreateRemoteUser(GivenServer,Password,User)
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
+            if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                return false, TIMEOUT
             end
             SendData["Mode"] = "CreateUser" --setup data to send
             local PuKey, PrKey = DC.generateKeyPair()
@@ -353,11 +323,7 @@ function CreateRemoteUser(GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
+                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -367,11 +333,7 @@ function CreateRemoteUser(GivenServer,Password,User)
                         SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        local originAddress = 0.0
-                        local NoError = ""
-                        while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                            NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                        end
+                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -406,9 +368,8 @@ function DeleteRemoteUser(GivenServer,Password,User)
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
+            if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                return false, TIMEOUT
             end
             SendData["Mode"] = "DeleteUser" --setup data to send
             local PuKey, PrKey = DC.generateKeyPair()
@@ -417,11 +378,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
+                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -429,11 +386,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
                         SendData["PasswordSignature"] = DC.ecdsa(Password,PrKey)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        local originAddress = 0.0
-                        local NoError = ""
-                        while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                            NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                        end
+                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -468,9 +421,8 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
-            local CID = 0 --Wait for server to open back
-            while CID ~= PCID do
-                _, _, CID = event.pull("GERTConnectionID")
+            if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                return false, TIMEOUT
             end
             SendData["Mode"] = "DeleteFile" --setup data to send
             SendData["User"] = User or "Public"
@@ -481,11 +433,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                local originAddress = 0.0
-                local NoError = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                end
+                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -494,11 +442,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
                         SendData["Name"] = DC.encrypt(FilePath,TruncatedSHA256Key,1)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        local originAddress = 0.0
-                        local NoError = ""
-                        while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                            NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-                        end
+                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -545,11 +489,7 @@ function GetFiles(GivenServer,Password,User)
         local Sending = true
         while Sending do
             OpenSockets[GivenServer]:write(SendingData)
-            local originAddress = 0.0
-            local NoError = ""
-            while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
-            end
+            NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
             if NoError then
                 local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                 if ServerResponse["State"] == "Ready" then
