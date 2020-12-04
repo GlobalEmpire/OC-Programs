@@ -17,16 +17,31 @@ local SendData = []
 local OpenSockets = []
 
 --Program Error Codes:
-local FILENOTFOUND = 0
-local INVALIDCREDENTIALS = 1
-local INVALIDFILELOCATION = 2
-local INVALIDSERVERADDRESS = 3
-local NILSERVERADDRESS = 4
-local INCOMPATIBLESERVER = 5
-local UNEXPECTEDRESPONSE = 6
-local TIMEOUT = 7
-local MISSINGHARDWARE = 8
-local CONFIGDIRECTORYISFILE = 10
+local UNKNOWNERROR = 0
+local FILENOTFOUND = 1
+local INVALIDCREDENTIALS = 2
+local INVALIDFILELOCATION = 3
+local INVALIDSERVERADDRESS = 4
+local NILSERVERADDRESS = 5
+local INCOMPATIBLESERVER = 6
+local UNEXPECTEDRESPONSE = 7
+local TIMEOUT = 8
+local MISSINGHARDWARE = 9
+local FILEEXISTS = 10
+local NOSPACE = 11
+local USERCREATIONERROR = 12
+local USEREXISTS = 13
+local CONFIGDIRECTORYISFILE = 20
+
+
+local ServerSideErrors = []
+ServerSideErrors["Ready"] = UNKNOWNERROR
+ServerSideErrors["FileExists"] = FILEEXISTS
+ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
+ServerSideErrors["InsufficientSpace"] = NOSPACE
+ServerSideErrors["UserCreationError"] = USERCREATIONERROR
+ServerSideErrors["UserExists"] = USEREXISTS
+
 
 --OnRun Code:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -80,17 +95,17 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
             if ServerVersion >= compatibility then
                 return true, 0
             else
-                return false, INVALIDSERVERADDRESS
+                return false, INCOMPATIBLESERVER
             end
         else
-            return false, INCOMPATIBLESERVER
+            return false, INVALIDSERVERADDRESS
         end
     else
         return false, NILSERVERADDRESS
     end
 end
 
-local function VerifyCredentials(User,Password)
+local function VerifyCredentials(Password,User)
 
 end
 
@@ -144,7 +159,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
     end
 end
 
-function RequestFile(FileName,GivenServer,User,Password) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
+function RequestFile(FileName,GivenServer,Password,User) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if user == nil then
         if FileName then
@@ -229,9 +244,9 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                             receiving = false --Tidy up
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
-                            if FileTable["UserValid"] then
+                            if FileTable["State"] == "Ready" then
                                 if FileTable["FileName"] == FileName then
-                                    local SharedSecret = DC.ecdh(PrKey, FileTable["PuKey"])
+                                    local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(FileTable["PuKey"]))
                                     local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
                                     local File = io.open("OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
                                     File:write(DC.decrypt(FileTable["Content"],TruncatedSHA256Key,1))
@@ -241,7 +256,7 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
                                     return false, FILENOTFOUND
                                 end
                             else
-                                return false, INVALIDCREDENTIALS
+                                return false, ServerSideErrors[FileTable["State"]]
                             end
                         end
                     else
@@ -258,9 +273,9 @@ function RequestFile(FileName,GivenServer,User,Password) -- This function Reques
     end
 end
 
-function SendFile(FileName,GivenServer,User,Password)
+function SendFile(FilePath,GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
-    if FileName then
+    if FilePath then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
             local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
@@ -269,38 +284,139 @@ function SendFile(FileName,GivenServer,User,Password)
                 _, _, CID = event.pull("GERTConnectionID")
             end
             SendData["Mode"] = "SendPrivateFile" --setup data to send
-            SendData["Name"] = tostring(FileName)
-            SendData["User"] = User
+            SendData["Name"] = fs.name(FilePath)
+            SendData["User"] = User or "Public"
             local PuKey, PrKey = DC.generateKeyPair()
-            SendData["PasswordSignature"] = ecdsa(Password,PrKey)
+            SendData["PasswordSignature"] = ecdsa(Password or "Default",PrKey)
             SendData["PuKey"] = PuKey.serialize()
+            SendData["Size"] = fs.size(FilePath)
             local SendingData = SRL.serialize(SendData)
             local Sending = true
+            local FileData = io.open(FilePath, "r")
+            local EncodedFileData = ""
             while Sending do
-                if string.len(SendingData) > m.maxPacketSize() - 512 then
-                    local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
-                    SendingData = string.sub(SendingData,m.maxPacketSize())
-                    OpenSockets[GivenServer]:write(tempSend)
+                OpenSockets[GivenServer]:write(SendingData)
+                local originAddress = 0.0
+                local NoError = ""
+                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                end
+                if NoError then
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    if ServerResponse["State"] == "Ready" then
+                        if SendData["Content"] == nil then
+                            local SharedSecret = DC.ecdh("PrKey", DC.deserializeKey(ServerResponse["PuKey"]))
+                            local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
+                            SendData = []
+                            SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
+                            FileData:close()
+                            SendData["Name"] = fs.name(FilePath)
+                            SendingData = SRL.serialize(SendData)
+                        end
+                        if string.len(SendingData) > m.maxPacketSize() - 512 then
+                            local tempSend = string.sub(SendingData,1,m.maxPacketSize()-512)
+                            SendingData = string.sub(SendingData,m.maxPacketSize()-512)
+                            OpenSockets[GivenServer]:write(tempSend)
+                        else
+                            OpenSockets[GivenServer]:write(SendingData)
+                            OpenSockets[GivenServer]:close()
+                            Sending = false
+                            return true, 0
+                        end
+                    else
+                        Sending = false
+                        FileData:close()
+                        OpenSockets[GivenServer]:close()
+                        return false, ServerSideErrors[ServerResponse["State"]]    
+                    end
                 else
-                    OpenSockets[GivenServer]:write(SendingData)
+                    Sending = false
+                    FileData:close()
                     OpenSockets[GivenServer]:close()
+                    return false, TIMEOUT
                 end
             end
         else
             return false, INVALIDSERVERADDRESS
         end
+    else
+        return false, FILENOTFOUND
     end
 end
 
-function CreateRemoteUser(User,Password)
+function CreateRemoteUser(GivenServer,Password,User)
+    GivenServer = GivenServer or DefaultServer
+    if Password and user then
+        local VerSer, code = VerifyServer(GivenServer, Compatibility)
+        if VerSer then
+            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            local CID = 0 --Wait for server to open back
+            while CID ~= PCID do
+                _, _, CID = event.pull("GERTConnectionID")
+            end
+            SendData["Mode"] = "CreateUser" --setup data to send
+            local PuKey, PrKey = DC.generateKeyPair()
+            SendData["PuKey"] = PuKey.serialize()
+            local SendingData = SRL.serialize(SendData)
+            local Sending = true
+            while Sending do
+                OpenSockets[GivenServer]:write(SendingData)
+                local originAddress = 0.0
+                local NoError = ""
+                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                    NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                end
+                if NoError then
+                    local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                    if ServerResponse["State"] == "Ready" then
+                        local SharedSecret = DC.ecdh(PrKey, DC.deserializeKey(ServerResponse["PuKey"]))
+                        local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
+                        SendData["User"] = DC.encrypt(User,TruncatedSHA256Key,1)
+                        SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
+                        SendingData = SRL.serialize(SendData)
+                        OpenSockets[GivenServer]:write(SendingData)
+                        local originAddress = 0.0
+                        local NoError = ""
+                        while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
+                            NoError, originAddress, _ = event.pullFiltered(15, FilterResponse)
+                        end
+                        if NoError then
+                            local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read())
+                            if ServerResponse["State"] == "Ready" then
+                                OpenSockets[GivenServer]:close()
+                                return true, 0
+                            else
+                                OpenSockets[GivenServer]:close()
+                                return false, ServerSideErrors[ServerResponse["State"]] 
+                            end
+                        else
+                            OpenSockets[GivenServer]:close()
+                            return false, TIMEOUT
+                        end
+                    else
+                        return false, ServerSideErrors[ServerResponse["State"]]
+                    end
+                else
+                    return false, TIMEOUT
+                end
+            end
+        else
+            return false, INVALIDSERVERADDRESS
+        end
+    else
+        return false, INVALIDCREDENTIALS
+    end
+end
+
+function DeleteRemoteUser(GivenServer,Password,User)
 
 end
 
-function DeleteRemoteUser(User,Password)
+function DeleteRemoteFile(GivenServer,FileName,Password,User)
 
 end
 
-function DeleteRemoteFile(FileName,User,Password)
+function GetFileList(GivenServer,Password,User)
 
 end
 
