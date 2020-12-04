@@ -118,7 +118,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
     if PackageName then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
             while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
@@ -168,7 +168,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
         if FileName then
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
-                local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+                OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
                 local CID = 0 --Wait for server to open back
                 while CID ~= PCID do
                     _, _, CID = event.pull("GERTConnectionID")
@@ -219,7 +219,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
         if FileName then
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
-                local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+                OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
                 local CID = 0 --Wait for server to open back
                 while CID ~= PCID do
                     _, _, CID = event.pull("GERTConnectionID")
@@ -281,7 +281,7 @@ function SendFile(FilePath,GivenServer,Password,User)
     if FilePath then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
             while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
@@ -352,7 +352,7 @@ function CreateRemoteUser(GivenServer,Password,User)
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
             while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
@@ -416,7 +416,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
             while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
@@ -478,7 +478,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
         if VerSer then
-            local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+            OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             local CID = 0 --Wait for server to open back
             while CID ~= PCID do
                 _, _, CID = event.pull("GERTConnectionID")
@@ -542,7 +542,7 @@ function GetFiles(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     local VerSer, code = VerifyServer(GivenServer, Compatibility)
     if VerSer then
-        local OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
+        OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
         local CID = 0 --Wait for server to open back
         while CID ~= PCID do
             _, _, CID = event.pull("GERTConnectionID")
