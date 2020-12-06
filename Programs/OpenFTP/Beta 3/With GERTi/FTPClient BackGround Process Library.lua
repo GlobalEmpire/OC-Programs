@@ -108,12 +108,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
             local ReceivedData = ""
             while receiving do 
                 OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
-                local originAddress = 0.0
-                local NoError = ""
-                local ServerResponse = ""
-                while NoError and originAddress ~= GivenServer do --Make sure that it only stops when the function times out or we get a response from the server
-                    NoError, originAddress, _, ServerResponse = event.pullFiltered(15, FilterResponse)
-                end
+                local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then --if it didnt time out:
                     local TempData = tostring(OpenSockets[GivenServer]:read()[1])
                     ReceivedData = ReceivedData .. TempData
@@ -157,7 +152,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                 local ReceivedData = ""
                 while receiving do 
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
-                    NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                    local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
@@ -206,7 +201,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
                 local ReceivedData = ""
                 while receiving do 
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
-                    NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                    local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
                         local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
@@ -265,7 +260,7 @@ function SendFile(FilePath,GivenServer,Password,User)
             local EncodedFileData = ""
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -325,7 +320,7 @@ function CreateRemoteUser(GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -335,7 +330,7 @@ function CreateRemoteUser(GivenServer,Password,User)
                         SendData["Password"] = DC.encrypt(Password,TruncatedSHA256Key,2)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                        local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -380,7 +375,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -388,7 +383,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
                         SendData["PasswordSignature"] = DC.ecdsa(Password,PrKey)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                        local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -435,7 +430,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
             local Sending = true
             while Sending do
                 OpenSockets[GivenServer]:write(SendingData)
-                NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then
                     local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                     if ServerResponse["State"] == "Ready" then
@@ -444,7 +439,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
                         SendData["Name"] = DC.encrypt(FilePath,TruncatedSHA256Key,1)
                         SendingData = SRL.serialize(SendData)
                         OpenSockets[GivenServer]:write(SendingData)
-                        NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+                        local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                         if NoError then
                             local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                             if ServerResponse["State"] == "Ready" then
@@ -491,7 +486,7 @@ function GetFiles(GivenServer,Password,User)
         local Sending = true
         while Sending do
             OpenSockets[GivenServer]:write(SendingData)
-            NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
+            local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
             if NoError then
                 local ServerResponse = SRL.unserialize(OpenSockets[GivenServer]:read()[1])
                 if ServerResponse["State"] == "Ready" then
