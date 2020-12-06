@@ -25,9 +25,7 @@ Recognised Argument patterns:
         OperatingCID: number -- This determines what CID the program will run and listen on
         DisabledFeatures: table -- This table contains the names of features that the server can do. Any feature that the server program has, that is in this table with the value of `true` will not be started, but instead an alternative function will be started that responds to any incoming request to utilise this feature that it has been disabled.
 
-
 ]]
-
 local component = require("component")
 local m = component.modem
 local DC = component.data
@@ -36,13 +34,17 @@ local GERTi = require("GERTiClient")
 local fs = require("filesystem")
 local SRL = require("serialization")
 
+
 --Program Variables:
 local Compatibility = "Beta3.0"
-local PCID = 98
+local PCID = 98 -- Make this load from config
 local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
-local ProcessTimers = {}
+local ModeData = {}
+local Processes = {}
+local TimeOuts = {}
+local Profile = ""
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -51,6 +53,8 @@ if fs.isDirectory(".config") then -- If the config file exists, read it and load
 		ConfigSettings = SRL.unserialize(ConfigFile:read())
 		ConfigFile:close()
     end
+else
+    args[1] = "FirstRun"
 end
 if not(fs.isDirectory("OpenFTPSERVER")) then -- Ensures that the OpenFTPSERVER directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
     if fs.exists("OpenFTPSERVER") then
@@ -76,6 +80,12 @@ if not(fs.isDirectory("OpenFTPSERVER/Users")) then
     end
     fs.makeDirectory("OpenFTPSERVER/Users")
 end
+if not(fs.isDirectory("OpenFTPSERVER/Profiles")) then
+    if fs.exists("OpenFTPSERVER/Profiles") then
+        fs.rename("OpenFTPSERVER/Profiles", "OpenFTPSERVER/Profiles.oldFile")
+    end
+    fs.makeDirectory("OpenFTPSERVER/Profiles")
+end
 
 --Local Functions
 local function ReturnSocket(EventName, OriginAddress, CID)
@@ -83,41 +93,85 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 end
 
 local function CloseSocket(EventName, OriginAddress, CID)
-	if OpenSockets[OriginAddress] then
-		OpenSockets[OriginAddress]:close()
-		if ProcessTimers[OriginAddress] then
-			for quantity, ID in pairs(ProcessTimers[OriginAddress]) do 
-				event.cancel(ID)
-			end
-		end
+    if TimeOuts[OriginAddress] then
+        event.cancel(TimeOuts[OriginAddress])
+        TimeOuts[OriginAddress] = nil
+    end	
+    if OpenSockets[OriginAddress] and CID == PCID then
+        OpenSockets[OriginAddress]:close()
+        OpenSockets[OriginAddress] = nil
+        ModeData[OriginAddress] = nil
 	end
+end
+
+local function TimeOutConnection(Address,CID) 
+    return function() 
+        CloseSocket(nil,Address,CID)
+    end 
+end
+
+Processes["RequestPackage"] = function (OriginAddress,Data)
+    local SendData = {}
+    if fs.exists("OpenFTPSERVER/Packages/"..Profile..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/Packages/"..Profile..Data["Name"])) then
+        local Package = io.open("/OpenFTPSERVER/Packages/"..Profile..Data["Name"],"r")
+        SendData["PackageName"] = Data["Name"]
+        SendData["Package"] = Package:read()
+        Package:close()
+    end
+    OpenSockets[OriginAddress]:write(SRL.serialize(SendData))
+    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+end
+
+local function SetMode(OriginAddress)
+    ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
+    if Processes[ModeData[OriginAddress]["Mode"]] then
+        Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
+    end
 end
 
 local function Decider(EventName, OriginAddress, CID, Data)
-
+    if Data then
+        if Data == "GetVersion" then
+            GERTi.send(OriginAddress, Compatibility)
+        end
+    elseif CID == PCID and OpenSockets[OriginAddress] then
+        if ModeData[OriginAddress] then
+            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
+        else
+            SetMode(OriginAddress)
+        end
+    end
 end
 
-local function VersionResponse()
-
-end
-
-local function SafeDown()
+local function ESafeDown()
 	for address, socket in pairs(OpenSockets) do
 		socket:write(SRL.serialize({"State":"SafeDown"}))
-		socket:close()
-	end
+        socket:close()
+    end
+    
 end
 
+local function SafeStop()
+    Compatibility = "Stopping"
+    while not(SRL.serialize(OpenSockets) == "{}") do
+    end
+    event.push("OFTPSafeStop", PCID)
+end
 --Event Listeners
 local Listeners = {}
 local ListenerStatus = "Unverified"
-if fs.exists("/tmp/.OFTPSLS") then 
-	local EventFile = io.open("/tmp/.OFTPSLS","r")
+if fs.exists("/tmp/.OFTPSLS"..tostring(PCID)) then 
+	local EventFile = io.open("/tmp/.OFTPSLS"..tostring(PCID),"r")
 	Listeners = SRL.unserialize(EventFile:read())
 	EventFile:close()
 else
 	ListenerStatus = "Offline"
 end
 
+
+event.listen("GERTData",Decider)
+event.listen("GERTConnectionID", ReturnSocket)
+event.listen("GERTConnectionClose", CloseSocket)
+
 --User Interface
-if opts.
+--if opts.
