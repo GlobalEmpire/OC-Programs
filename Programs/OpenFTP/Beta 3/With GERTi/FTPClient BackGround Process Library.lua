@@ -32,6 +32,7 @@ local NOSPACE = 11
 local USERMODIFICATIONERROR = 12
 local USEREXISTS = 13
 local USERDOESNOTEXIST = 14
+local FEATUREDISABLED = 15
 local CONFIGDIRECTORYISFILE = 20
 
 local ServerSideErrors = {}
@@ -42,6 +43,7 @@ ServerSideErrors["InsufficientSpace"] = NOSPACE
 ServerSideErrors["UserModificationError"] = USERMODIFICATIONERROR
 ServerSideErrors["UserExists"] = USEREXISTS
 ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
+ServerSideErrors["Disabled"] = FEATUREDISABLED
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
