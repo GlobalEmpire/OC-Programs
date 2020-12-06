@@ -145,7 +145,7 @@ end
 
 local function ESafeDown()
 	for address, socket in pairs(OpenSockets) do
-		socket:write(SRL.serialize({"State":"SafeDown"}))
+		socket:write("{State=\"SafeDown\"}")
         socket:close()
     end
     
