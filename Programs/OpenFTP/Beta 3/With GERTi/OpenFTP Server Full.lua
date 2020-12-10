@@ -13,6 +13,8 @@ Recognised Argument patterns:
 "NoGui" - Launches the program in Default mode, but without GUI. Does nothing if GUI is disabled in the Default Config File
 "ForceGui" - Launches the program in Default, and ensures the the Full GUI is launched regardless of any other set parameters.
 "SafeDown" - This Argument must be passed alone, with no options. This stops the program and all profiles, regardless of whatever they might be doing. This is intended to be used in the event that a shutdown is imminent, and that there is not enough time to wait for anything to complete. The program will immediately stop accepting new connections, kill all existing processes related to the program, send "SafeDown" to all open connections, to alert them to the immediate interruption of service, and then close all connections. It is preferred to use the argument "FinishAll" when circumstances allow, as it will push the "OFTPSAFE" event when finished.
+
+I might add the following feature to Beta 4:
 "Boot"[, Profile: string] - This argument can be passed with a second argument for the profile name, but simply launches the default profile otherwise. This changes the following normal behaviours of the program:
     It loads the OFTPD Config file from the specified profile. In the event the profile or the config file doesnt exist, the program will simply beep 3 times, and exit with no further exceptions. This is to allow a multiple servers with different configuration options to run on the computer without interfering, and all can easily be launched right after boot, hence the argument name.
     The OFTPD config file can be edited/created either by using the argument "ProfileEdit" (See below) or navigating to Advanced Options, then Profiles, in the normal GUI.
@@ -112,21 +114,44 @@ local function TimeOutConnection(Address,CID)
 end
 
 Processes["RequestPackage"] = function (OriginAddress,Data)
-    local SendData = {}
-    if fs.exists("OpenFTPSERVER/Packages/"..Profile..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/Packages/"..Profile..Data["Name"])) then
-        local Package = io.open("/OpenFTPSERVER/Packages/"..Profile..Data["Name"],"r")
-        SendData["PackageName"] = Data["Name"]
-        SendData["Package"] = Package:read("*a")
+    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"=..Data["Name"],"r")
+        ModeData[OriginAddress]["SendData"]["PackageName"] = Data["Name"]
+        ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
+        Package:close()
+    end
+    if not(ModeData[OriginAddress]["SerialData"]) then
+        ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
+    end
+    if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
+        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
+        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
+    else
+        ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
+    end
+    OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialData"])
+    if TimeOuts[OriginAddress] then
+        event.cancel(TimeOuts[OriginAddress])
+    end
+    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+end
+
+Processes["RequestPublicFile"] = function (OriginAddress,Data)
+    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Public/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..Data["Name"])) then
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..Data["Name"],"r")
+        ModeData[OriginAddress]["SendData"]["FileName"] = Data["Name"]
+        ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
         Package:close()
     end
     OpenSockets[OriginAddress]:write(SRL.serialize(SendData))
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
 end
 
+
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
     if Processes[ModeData[OriginAddress]["Mode"]] then
-        if not ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"] then
+        if not(ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"]) then
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
         else
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
