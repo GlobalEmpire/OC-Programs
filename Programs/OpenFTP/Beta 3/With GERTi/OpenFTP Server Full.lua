@@ -115,7 +115,7 @@ end
 
 Processes["RequestPackage"] = function (OriginAddress,Data)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
-        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"=..Data["Name"],"r")
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"],"r")
         ModeData[OriginAddress]["SendData"]["PackageName"] = Data["Name"]
         ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
         Package:close()
