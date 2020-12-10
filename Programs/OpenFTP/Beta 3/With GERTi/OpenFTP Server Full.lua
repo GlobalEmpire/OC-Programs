@@ -126,7 +126,13 @@ end
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
     if Processes[ModeData[OriginAddress]["Mode"]] then
-        Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
+        if not ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"] then
+            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
+        else
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
+        end
+    else
+        OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"ModeNotFound\"}"))
     end
 end
 

@@ -16,6 +16,7 @@ local PCID = 98
 local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
+local OFTP
 
 --Program Error Codes:
 local UNKNOWNERROR = 0
@@ -34,6 +35,8 @@ local USERMODIFICATIONERROR = 12
 local USEREXISTS = 13
 local USERDOESNOTEXIST = 14
 local FEATUREDISABLED = 15
+local FEATUREUNAVAILABLE = 16
+local SERVERSAFEDOWN = 17
 local CONFIGDIRECTORYISFILE = 20
 
 local ServerSideErrors = {}
@@ -45,6 +48,8 @@ ServerSideErrors["UserModificationError"] = USERMODIFICATIONERROR
 ServerSideErrors["UserExists"] = USEREXISTS
 ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
 ServerSideErrors["Disabled"] = FEATUREDISABLED
+ServerSideErrors["ModeNotFound"] = FEATUREUNAVAILABLE
+ServerSideErrors["SafeDown"] = SERVERSAFEDOWN
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -94,7 +99,7 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
 end
 
 --Public Functions
-function RequestPackage(PackageName,GivenServer) -- This function is for requesting packages from the set FTP server. Packages are always public.
+function OFTP.RequestPackage(PackageName,GivenServer) -- This function is for requesting packages from the set FTP server. Packages are always public.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if PackageName then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -117,7 +122,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
                         receiving = false --Tidy up
                         OpenSockets[GivenServer]:close()
                         if SRL.unserialize(ReceivedData)["PackageName"] == nil then
-                            return false, FILENOTFOUND
+                            return false, ServerSideErrors[SRL.unserialize(ReceivedData)["State"]] or FILENOTFOUND
                         end
                         local packageFile = io.open("/OpenFTPLIB/Packages/" .. tostring(PackageName), "w") --Overwrites any existing file. This is intentional
                         packageFile:write(ReceivedData)
@@ -137,7 +142,7 @@ function RequestPackage(PackageName,GivenServer) -- This function is for request
     end
 end
 
-function RequestFile(FileName,GivenServer,Password,User) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
+function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function Requests a file from the user. Params 3 and 4 are Username and Password respectively, leave blank to request a public file.
     GivenServer = GivenServer or ConfigSettings["DefaultServer"]
     if user == nil then
         if FileName then
@@ -239,7 +244,7 @@ function RequestFile(FileName,GivenServer,Password,User) -- This function Reques
     end
 end
 
-function SendFile(FilePath,GivenServer,Password,User)
+function OFTP.SendFile(FilePath,GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     if FilePath then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -305,7 +310,7 @@ function SendFile(FilePath,GivenServer,Password,User)
     end
 end
 
-function CreateRemoteUser(GivenServer,Password,User)
+function OFTP.CreateRemoteUser(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -360,7 +365,7 @@ function CreateRemoteUser(GivenServer,Password,User)
     end
 end
 
-function DeleteRemoteUser(GivenServer,Password,User)
+function OFTP.DeleteRemoteUser(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -413,7 +418,7 @@ function DeleteRemoteUser(GivenServer,Password,User)
     end
 end
 
-function DeleteRemoteFile(FilePath,GivenServer,Password,User)
+function OFTP.DeleteRemoteFile(FilePath,GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     if Password and user then
         local VerSer, code = VerifyServer(GivenServer, Compatibility)
@@ -469,7 +474,7 @@ function DeleteRemoteFile(FilePath,GivenServer,Password,User)
     end
 end
 
-function GetFiles(GivenServer,Password,User)
+function OFTP.GetFiles(GivenServer,Password,User)
     GivenServer = GivenServer or DefaultServer
     local VerSer, code = VerifyServer(GivenServer, Compatibility)
     if VerSer then
@@ -529,3 +534,5 @@ if args[1] == "setup" then
         ConfigFile:close()
     end
 end
+
+return OFTP
