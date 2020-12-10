@@ -172,7 +172,7 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                                 File:close()
                                 return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
                             else
-                                return false, FILENOTFOUND
+                                return false, ServerSideErrors[SRL.unserialize(ReceivedData)["State"]] or FILENOTFOUND
                             end
                         end
                     else
