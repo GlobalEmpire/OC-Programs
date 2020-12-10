@@ -16,7 +16,7 @@ local PCID = 98
 local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
-local OFTP
+local OFTP = {}
 
 --Program Error Codes:
 local UNKNOWNERROR = 0
