@@ -129,7 +129,7 @@ Processes["RequestPackage"] = function (OriginAddress,Data)
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
-    OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialData"])
+    OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
     if TimeOuts[OriginAddress] then
         event.cancel(TimeOuts[OriginAddress])
     end
@@ -143,7 +143,19 @@ Processes["RequestPublicFile"] = function (OriginAddress,Data)
         ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
         Package:close()
     end
-    OpenSockets[OriginAddress]:write(SRL.serialize(SendData))
+    if not(ModeData[OriginAddress]["SerialData"]) then
+        ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
+    end
+    if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
+        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
+        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
+    else
+        ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
+    end
+    OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
+    if TimeOuts[OriginAddress] then
+        event.cancel(TimeOuts[OriginAddress])
+    end
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
 end
 
