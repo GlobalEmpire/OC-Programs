@@ -50,7 +50,7 @@ local Profile = ""
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
     if fs.exists(".config/.OFTPSERVER") then
         local ConfigFile = io.open("/.config/.OFTPSERVER")
-		ConfigSettings = SRL.unserialize(ConfigFile:read())
+		ConfigSettings = SRL.unserialize(ConfigFile:read("*a"))
 		ConfigFile:close()
     end
 else
@@ -115,7 +115,7 @@ Processes["RequestPackage"] = function (OriginAddress,Data)
     if fs.exists("OpenFTPSERVER/Packages/"..Profile..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/Packages/"..Profile..Data["Name"])) then
         local Package = io.open("/OpenFTPSERVER/Packages/"..Profile..Data["Name"],"r")
         SendData["PackageName"] = Data["Name"]
-        SendData["Package"] = Package:read()
+        SendData["Package"] = Package:read("*a")
         Package:close()
     end
     OpenSockets[OriginAddress]:write(SRL.serialize(SendData))
@@ -162,7 +162,7 @@ local Listeners = {}
 local ListenerStatus = "Unverified"
 if fs.exists("/tmp/.OFTPSLS"..tostring(PCID)) then 
 	local EventFile = io.open("/tmp/.OFTPSLS"..tostring(PCID),"r")
-	Listeners = SRL.unserialize(EventFile:read())
+	Listeners = SRL.unserialize(EventFile:read("*a"))
 	EventFile:close()
 else
 	ListenerStatus = "Offline"
