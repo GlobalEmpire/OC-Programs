@@ -49,7 +49,7 @@ ServerSideErrors["Disabled"] = FEATUREDISABLED
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
     if fs.exists(".config/.OFTPLIB") then
         local ConfigFile = io.open("/.config/.OFTPLIB")
-        ConfigSettings = SRL.unserialize(ConfigFile:read())
+        ConfigSettings = SRL.unserialize(ConfigFile:read("*a"))
         ConfigFile:close()
     end
 end
@@ -268,7 +268,7 @@ function SendFile(FilePath,GivenServer,Password,User)
                             local SharedSecret = DC.ecdh("PrKey", DC.deserializeKey(ServerResponse["PuKey"]))
                             local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
                             SendData = {}
-                            SendData["Content"] = DC.encrypt(FileData:read(),TruncatedSHA256Key,1)
+                            SendData["Content"] = DC.encrypt(FileData:read("*a"),TruncatedSHA256Key,1)
                             FileData:close()
                             SendData["Name"] = fs.name(FilePath)
                             SendingData = SRL.serialize(SendData)
