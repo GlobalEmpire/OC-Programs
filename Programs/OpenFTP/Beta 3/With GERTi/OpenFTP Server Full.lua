@@ -110,30 +110,45 @@ end
 local function TimeOutConnection(Address,CID) 
     return function() 
         CloseSocket(nil,Address,CID)
-    end 
+    end
 end
 
 Processes["RequestPackage"] = function (OriginAddress,Data)
+    print(1)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
+        print(2)
         local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"],"r")
+        print(3)
         ModeData[OriginAddress]["SendData"]["PackageName"] = Data["Name"]
+        print(4)
         ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
+        print(5)
         Package:close()
     end
+    print(6)
     if not(ModeData[OriginAddress]["SerialData"]) then
+        print(7)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
     end
+    print(8)
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
+        print(9)
         ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
+        print(10)
         ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
     else
+        print(11)
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
+    print(12)
     OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
     if TimeOuts[OriginAddress] then
+        print(13)
         event.cancel(TimeOuts[OriginAddress])
     end
+    print(14)
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+    print(15)
 end
 
 Processes["RequestPublicFile"] = function (OriginAddress,Data)
