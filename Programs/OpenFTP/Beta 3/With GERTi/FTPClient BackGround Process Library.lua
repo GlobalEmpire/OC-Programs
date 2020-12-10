@@ -3,6 +3,7 @@ local shell = require("shell")
 local args, opts = shell.parse(...)
 local component = require("component")
 local m = component.modem
+local MPSI = m.maxPacketSize or require("DeviceInfo")
 local DC = component.data
 local event = require("event")
 local GERTi = require("GERTiClient")
