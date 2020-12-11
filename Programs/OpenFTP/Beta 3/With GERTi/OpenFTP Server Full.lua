@@ -115,20 +115,27 @@ end
 
 Processes["RequestPackage"] = function (OriginAddress)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])) then
-        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"],"r")
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"],"r")--SECURITY BREACH, get the true form to make sure it never goes up a directory
         ModeData[OriginAddress]["SendData"] = {}
         ModeData[OriginAddress]["SendData"]["PackageName"] = ModeData[OriginAddress]["Name"]
         ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
         Package:close()
     elseif not(ModeData[OriginAddress]["SendData"]) then
         ModeData[OriginAddress]["SendData"] = {}
+    else
+        local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
+        for k,v in pairs(readData) do
+            if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
+                ModeData[OriginAddress][k] = v
+            end
+        end
     end
     if not(ModeData[OriginAddress]["SerialData"]) then
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
     end
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
         ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
-        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
+        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
@@ -152,7 +159,7 @@ Processes["RequestPublicFile"] = function (OriginAddress)
         local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
         for k,v in pairs(readData) do
             if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
-                ModeData[k] = v
+                ModeData[OriginAddress][k] = v
             end
         end
     end
