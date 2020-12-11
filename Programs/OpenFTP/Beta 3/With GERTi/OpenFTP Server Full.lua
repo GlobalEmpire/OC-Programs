@@ -96,7 +96,6 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 end
 
 local function CloseSocket(EventName, OriginAddress, DestinationAddress, CID)
-    print("Close",OriginAddress)
     if TimeOuts[OriginAddress] and CID == PCID then
         event.cancel(TimeOuts[OriginAddress])
         TimeOuts[OriginAddress] = nil
@@ -115,50 +114,29 @@ local function TimeOutConnection(Address,CID)
 end
 
 Processes["RequestPackage"] = function (OriginAddress)
-    print(1)
-    print(fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]))
-    print(not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])))
-    for k,v in pairs(ModeData[OriginAddress]) do print(k,v) end
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])) then
-        print(2)
         local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"],"r")
-        print(3)
         ModeData[OriginAddress]["SendData"] = {}
         ModeData[OriginAddress]["SendData"]["PackageName"] = ModeData[OriginAddress]["Name"]
-        print(4)
         ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
-        print(5)
         Package:close()
     elseif not(ModeData[OriginAddress]["SendData"]) then
         ModeData[OriginAddress]["SendData"] = {}
     end
-    print(6)
     if not(ModeData[OriginAddress]["SerialData"]) then
-        print(7)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
-        print(ModeData[OriginAddress]["SendData"])
-        print(ModeData[OriginAddress]["SerialData"])
     end
-    print(8)
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
-        print(9)
         ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
-        print(10)
         ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
     else
-        print(11)
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
-    print(12)
-    print(ModeData[OriginAddress]["SerialSendData"])
     OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
     if TimeOuts[OriginAddress] then
-        print(13)
         event.cancel(TimeOuts[OriginAddress])
     end
-    print(14)
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
-    print(15)
 end
 
 Processes["RequestPublicFile"] = function (OriginAddress,Data)
