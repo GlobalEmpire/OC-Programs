@@ -161,6 +161,7 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                     local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
                         local TempData = OpenSockets[GivenServer]:read()
+                        print(type(TempData))
                         print(TempData)
                         for k,v in pairs(TempData) do print(k,v) end
                         TempData = TempData[1]

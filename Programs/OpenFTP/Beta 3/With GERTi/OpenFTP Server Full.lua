@@ -186,7 +186,6 @@ local function Decider(EventName, OriginAddress, CID, Data)
             GERTi.send(OriginAddress, Compatibility) -- Change this to use a socket instead of GERTi.send for compatibility verification
         end
     elseif CID == PCID and OpenSockets[OriginAddress] then
-        os.sleep(3)
         if ModeData[OriginAddress] then
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
