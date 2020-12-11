@@ -1,17 +1,26 @@
-**OpenFTP** Compliance Outline  
-Created for the *Beta 3* release
-====
+<!--**OpenFTP** Compliance Outline  
+Created for the *Beta 3* release and onwards
+====-->
 
-This document exists to describe the necessary features required in a program for it to be considered compliant with the OpenFTP Beta 3 standard.  
+This document exists to describe the necessary features required in a program for it to be considered compliant with the OpenFTP Beta 3 (and onwards) standard.
 
-This document specifies multiple 'levels' of compliance, each ascending level requires all the compliance features of the previous levels, *as well as* the newly specified requirements.
+There are multiple 'levels' of compliance, each ascending level requires all the compliance features of the previous levels, *as well as* the newly specified requirements.
 
----
 
 Terminology:
-+ P2S = Peer-to-Server
-+ P2P = Peer-to-Peer
+====
+
++ P2S = Peer-to-Server: Any operation classed as P2S is specifically designed to only work between a designated Client program and Server program, using the P2S protocols.
++ P2P = Peer-to-Peer: Any operation classed as P2P is specifically designed to only work between two clients with this capability. P2S and P2P are not cross-compatible
++ P2A = Peer-to-All: Any operation that has been built in such a way that it does not require a client-server distinction. (Currently not implemented)
 + GERTi = [Globally Engineered Routing Technology (Internal)](https://github.com/GlobalEmpire/GERT)
+
+Compatibility
+====
+
+Programs must include their compatibility in the program, that is the version they were designed to work with. In the event that a version is backwards compatible, it will take the compatibility rating of the earliest version it is compatible with. 
+
+
 
 ---
 
@@ -20,11 +29,11 @@ Level 1 Prerequisites:
 
 > Access to a serialization library that is compatible with the OpenOS Table Serialization library.
 
-> Any error codes, defined by *any result* in the program that is not `return true, 0`, signifying that the command was not fully executed or completed, must be identical to the error codes found in the official standard, for ease of bugfixing and cross-compatibility, and defined at the beginning of the file for ease of identification *It is permitted to omit any errors which could never possibly occur because they pertain to a function that is not in your program.*
+> Any error codes, defined by *any result* in the program that is not `return true, 0`, signifying that the command was not fully executed or completed, must be identical to the error codes found in the official standard, for ease of bugfixing and cross-compatibility, and defined at the beginning of the file for ease of identification. *It is permitted to omit any errors which could never possibly occur because they are caused by a function that you have not included in your program.*
 
 > A local variable must be declared at the start of the program, which contains the port number that the program will use to open sockets. This is for ease of adjustment in custom setups. 
 
-> A local variable must be declared that contains the compatibility string of the program. For Beta 3, this string must be "3.0" 
+> A local variable must be declared that contains the compatibility string of the program. For Beta 3, this string must be "Beta3.0" 
 
 > For all timers, it is recommended to have a timeout of 15 seconds. Due to the way the functions work, a timeout of 5 seconds is likely more than sufficient, but 15 has been chosen for *Beta 3*
 
@@ -39,7 +48,7 @@ Level 1 Features:
 
 Level 2 Prerequisites:
 
-> Access to the Java/Scala cipher library is required for 128bit AES encryption, the SHA256 hash function, ecdh, ecdsa, and asymmetric Keypair generation 
+> Access to the Java/Scala cipher library is required for 128bit AES encryption in CBC mode, the SHA256 hash function, ecdh, ecdsa, and asymmetric Keypair generation 
 
 
 ---
