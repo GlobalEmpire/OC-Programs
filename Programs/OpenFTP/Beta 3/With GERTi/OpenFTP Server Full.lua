@@ -123,6 +123,7 @@ Processes["RequestPackage"] = function (OriginAddress)
     elseif not(ModeData[OriginAddress]["SendData"]) then
         ModeData[OriginAddress]["SendData"] = {}
     else
+        os.sleep()
         local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
         for k,v in pairs(readData) do
             if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
@@ -156,6 +157,7 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     elseif not(ModeData[OriginAddress]["SendData"]) then
         ModeData[OriginAddress]["SendData"] = {}
     else
+        os.sleep()
         local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
         for k,v in pairs(readData) do
             if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
@@ -181,6 +183,7 @@ end
 
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = {}
+    os.sleep()
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
     if ModeData[OriginAddress]["SendData"] then
         OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidProvidedData\"}"))
