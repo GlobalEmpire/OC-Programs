@@ -121,6 +121,8 @@ function OFTP.RequestPackage(PackageName,GivenServer) -- This function is for re
                     ReceivedData = ReceivedData .. TempData
                     if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                         receiving = false --Tidy up
+                        print(GivenServer)
+                        for k,v in OpenSockets do print(k,v) end
                         OpenSockets[GivenServer]:close()
                         if SRL.unserialize(ReceivedData)["PackageName"] == nil then
                             return false, ServerSideErrors[SRL.unserialize(ReceivedData)["State"]] or FILENOTFOUND
