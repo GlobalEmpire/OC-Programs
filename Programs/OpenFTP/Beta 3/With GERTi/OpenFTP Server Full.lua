@@ -115,6 +115,8 @@ end
 
 Processes["RequestPackage"] = function (OriginAddress,Data)
     print(1)
+    print(Data)
+    for k,v in pairs(Data) do print(k,v) end
     print(Data["SendData"])
     print(Data["Name"])
     print(fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]))
