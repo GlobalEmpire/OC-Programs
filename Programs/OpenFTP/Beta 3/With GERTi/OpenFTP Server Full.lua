@@ -105,11 +105,11 @@ local function CloseSocket(EventName, OriginAddress, CID)
     end	
 --[[Debug]]for k,v in pairs(OpenSockets) do print(k,v) end
     if OpenSockets[OriginAddress] and CID == PCID then 
-        print("C3")
+        print("--------------C3")
         OpenSockets[OriginAddress]:close()
         OpenSockets[OriginAddress] = nil
         ModeData[OriginAddress] = nil
-        print("C4")
+        print("--------------C4")
 	end
 end
 
