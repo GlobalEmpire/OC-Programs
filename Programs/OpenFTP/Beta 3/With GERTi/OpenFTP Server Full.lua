@@ -96,7 +96,7 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 end
 
 local function CloseSocket(EventName, OriginAddress, CID)
-    print("C1")
+    print("C1",CID,PCID)
 --[[Debug]]for k,v in pairs(TimeOuts) do print(k,v) end
     if TimeOuts[OriginAddress] then
         print("C2")
