@@ -139,7 +139,7 @@ Processes["RequestPackage"] = function (OriginAddress)
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
 end
 
-Processes["RequestPublicFile"] = function (OriginAddress,Data)
+Processes["RequestPublicFile"] = function (OriginAddress)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
         local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r")
         ModeData[OriginAddress]["SendData"] = {}
