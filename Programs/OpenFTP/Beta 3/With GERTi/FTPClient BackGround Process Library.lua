@@ -50,6 +50,7 @@ ServerSideErrors["UserDoesNotExist"] = USERDOESNOTEXIST
 ServerSideErrors["Disabled"] = FEATUREDISABLED
 ServerSideErrors["ModeNotFound"] = FEATUREUNAVAILABLE
 ServerSideErrors["SafeDown"] = SERVERSAFEDOWN
+ServerSideErrors["InvalidProvidedData"] = UNKNOWNERROR
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings

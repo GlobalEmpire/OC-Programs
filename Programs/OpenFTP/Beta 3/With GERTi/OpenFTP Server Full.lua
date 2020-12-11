@@ -141,13 +141,20 @@ end
 
 Processes["RequestPublicFile"] = function (OriginAddress)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
-        local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r")
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
         ModeData[OriginAddress]["SendData"] = {}
         ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
         ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
         Package:close()
     elseif not(ModeData[OriginAddress]["SendData"]) then
         ModeData[OriginAddress]["SendData"] = {}
+    else
+        local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
+        for k,v in pairs(readData) do
+            if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
+                ModeData[k] = v
+            end
+        end
     end
     if not(ModeData[OriginAddress]["SerialData"]) then
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
@@ -157,7 +164,6 @@ Processes["RequestPublicFile"] = function (OriginAddress)
         ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
         print(ModeData[OriginAddress]["SerialSendData"])
         print(string.len(ModeData[OriginAddress]["SerialSendData"]))
-
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
@@ -168,17 +174,22 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
 end
 
-
 local function SetMode(OriginAddress)
+    ModeData[OriginAddress] = {}
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
-    if Processes[ModeData[OriginAddress]["Mode"]] then
+    if ModeData[OriginAddress]["SendData"] then
+        OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidProvidedData\"}"))
+        ModeData[OriginAddress] = nil
+    elseif Processes[ModeData[OriginAddress]["Mode"]] then
         if not(ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"]) then
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
+            ModeData[OriginAddress] = nil
         end
     else
         OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"ModeNotFound\"}"))
+        ModeData[OriginAddress] = nil
     end
 end
 
