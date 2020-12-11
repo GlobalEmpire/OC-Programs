@@ -129,6 +129,8 @@ Processes["RequestPackage"] = function (OriginAddress)
         ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
         print(5)
         Package:close()
+    elseif not(ModeData[OriginAddress]["SendData"]) then
+        ModeData[OriginAddress]["SendData"] = {}
     end
     print(6)
     if not(ModeData[OriginAddress]["SerialData"]) then
