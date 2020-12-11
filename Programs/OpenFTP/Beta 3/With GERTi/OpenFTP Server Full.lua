@@ -155,7 +155,9 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
         ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
         ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
+        print(ModeData[OriginAddress]["SerialSendData"])
         print(string.len(ModeData[OriginAddress]["SerialSendData"]))
+
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
