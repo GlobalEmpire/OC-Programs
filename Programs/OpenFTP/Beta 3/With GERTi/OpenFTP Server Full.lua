@@ -95,7 +95,7 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 	OpenSockets[OriginAddress] = GERTi.openSocket(OriginAddress, true, PCID)
 end
 
-local function CloseSocket(EventName, OriginAddress, CID)
+local function CloseSocket(EventName, OriginAddress, DestinationAddress, CID)
     print("C1",CID,PCID)
 --[[Debug]]for k,v in pairs(TimeOuts) do print(k,v) end
     if TimeOuts[OriginAddress] then
@@ -118,7 +118,7 @@ end
 
 local function TimeOutConnection(Address,CID) 
     return function() 
-        CloseSocket(nil,Address,CID)
+        CloseSocket(nil,Address,GERTi.getAddress(),CID)
     end
 end
 
