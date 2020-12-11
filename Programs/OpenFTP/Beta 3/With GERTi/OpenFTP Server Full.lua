@@ -96,14 +96,18 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 end
 
 local function CloseSocket(EventName, OriginAddress, CID)
+    print("C1")
     if TimeOuts[OriginAddress] then
+        print("C2")
         event.cancel(TimeOuts[OriginAddress])
         TimeOuts[OriginAddress] = nil
     end	
     if OpenSockets[OriginAddress] and CID == PCID then
+        print("C3")
         OpenSockets[OriginAddress]:close()
         OpenSockets[OriginAddress] = nil
         ModeData[OriginAddress] = nil
+        print("C4")
 	end
 end
 

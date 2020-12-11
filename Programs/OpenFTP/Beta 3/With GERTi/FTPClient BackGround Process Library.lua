@@ -117,6 +117,7 @@ function OFTP.RequestPackage(PackageName,GivenServer) -- This function is for re
                 local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                 if NoError then --if it didnt time out:
                     local TempData = tostring(OpenSockets[GivenServer]:read()[1])
+                    print(1)
                     ReceivedData = ReceivedData .. TempData
                     if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                         receiving = false --Tidy up
