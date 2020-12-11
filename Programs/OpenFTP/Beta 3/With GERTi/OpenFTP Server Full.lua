@@ -97,11 +97,13 @@ end
 
 local function CloseSocket(EventName, OriginAddress, CID)
     print("C1")
+--[[Debug]]for k,v in TimeOuts do print(k,v)
     if TimeOuts[OriginAddress] then
         print("C2")
         event.cancel(TimeOuts[OriginAddress])
         TimeOuts[OriginAddress] = nil
     end	
+--[[Debug]]for k,v in OpenSockets do print(k,v)
     if OpenSockets[OriginAddress] and CID == PCID then
         print("C3")
         OpenSockets[OriginAddress]:close()
@@ -200,7 +202,7 @@ local function Decider(EventName, OriginAddress, CID, Data)
             GERTi.send(OriginAddress, Compatibility)
         end
     elseif CID == PCID and OpenSockets[OriginAddress] then
-        print(ModeData)
+        print(ModeData[OriginAddress])
         os.sleep(3)
         if ModeData[OriginAddress] then
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])

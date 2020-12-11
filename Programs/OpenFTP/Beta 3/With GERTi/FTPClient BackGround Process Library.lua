@@ -83,7 +83,7 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
     if address then --Verify that the default address or given address isnt nil 
         --Verify Server exists:
         GERTi.send(address, "GetVersion")
-        local _, _, _, ServerVersion = event.pull(5, "GERTData",address,-1)
+        local _, _, _, ServerVersion = event.pull(15, "GERTData",address,-1)
         if ServerVersion then --Verify Compatibility:
             if ServerVersion == compatibility then
                 return true, 0
