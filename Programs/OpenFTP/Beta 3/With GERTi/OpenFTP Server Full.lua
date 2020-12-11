@@ -116,6 +116,8 @@ end
 
 Processes["RequestPackage"] = function (OriginAddress)
     print(1)
+    print(fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]))
+    print(not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])))
     for k,v in pairs(ModeData[OriginAddress]) do print(k,v) end
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])) then
         print(2)
