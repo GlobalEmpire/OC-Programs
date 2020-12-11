@@ -111,7 +111,9 @@ local function CloseSocket(EventName, OriginAddress, CID)
         ModeData[OriginAddress] = nil
         print("--------------C4")
     end
+    print()
     print("--------------C5")
+    print()
 end
 
 local function TimeOutConnection(Address,CID) 
