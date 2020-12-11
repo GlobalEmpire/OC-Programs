@@ -164,8 +164,8 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                         print(type(TempData))
                         print(TempData)
                         TempData = TempData[1]
-                        ReceivedData = ReceivedData .. TempData
                         print(string.len(TempData))
+                        ReceivedData = ReceivedData .. TempData
                         print(string.len(ReceivedData))
                         if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole serialized table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             OpenSockets[GivenServer]:close()
