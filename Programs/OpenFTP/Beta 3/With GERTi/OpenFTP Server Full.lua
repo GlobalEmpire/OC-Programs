@@ -119,17 +119,17 @@ local function TimeOutConnection(Address,CID)
     end
 end
 
-Processes["RequestPackage"] = function (OriginAddress,Data)
+Processes["RequestPackage"] = function (OriginAddress)
     print(1)
-    for k,v in pairs(Data) do print(k,v) end
-    if not(Data["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
+    for k,v in pairs(ModeData[OriginAddress]) do print(k,v) end
+    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])) then
         print(2)
-        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"],"r")
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"],"r")
         print(3)
-        Data["SendData"] = {}
-        Data["SendData"]["PackageName"] = Data["Name"]
+        ModeData[OriginAddress]["SendData"] = {}
+        ModeData[OriginAddress]["SendData"]["PackageName"] = ModeData[OriginAddress]["Name"]
         print(4)
-        Data["SendData"]["Package"] = Package:read("*a")
+        ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
         print(5)
         Package:close()
     end
@@ -188,7 +188,7 @@ local function SetMode(OriginAddress)
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
     if Processes[ModeData[OriginAddress]["Mode"]] then
         if not(ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"]) then
-            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
+            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
         end
@@ -206,7 +206,7 @@ local function Decider(EventName, OriginAddress, CID, Data)
         print(ModeData[OriginAddress])
         os.sleep(3)
         if ModeData[OriginAddress] then
-            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
+            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
             SetMode(OriginAddress)
         end
