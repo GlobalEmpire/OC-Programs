@@ -115,19 +115,15 @@ end
 
 Processes["RequestPackage"] = function (OriginAddress,Data)
     print(1)
-    print(Data)
     for k,v in pairs(Data) do print(k,v) end
-    print(Data["SendData"])
-    print(Data["Name"])
-    print(fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]))
-    print(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]))
-    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
+    if not(Data["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"])) then
         print(2)
         local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..Data["Name"],"r")
         print(3)
-        ModeData[OriginAddress]["SendData"]["PackageName"] = Data["Name"]
+        Data["SendData"] = {}
+        Data["SendData"]["PackageName"] = Data["Name"]
         print(4)
-        ModeData[OriginAddress]["SendData"]["Package"] = Package:read("*a")
+        Data["SendData"]["Package"] = Package:read("*a")
         print(5)
         Package:close()
     end
