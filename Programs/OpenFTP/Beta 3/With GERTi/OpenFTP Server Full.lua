@@ -140,11 +140,14 @@ Processes["RequestPackage"] = function (OriginAddress)
 end
 
 Processes["RequestPublicFile"] = function (OriginAddress,Data)
-    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Public/"..Data["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..Data["Name"])) then
-        local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..Data["Name"],"r")
-        ModeData[OriginAddress]["SendData"]["FileName"] = Data["Name"]
+    if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+        local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r")
+        ModeData[OriginAddress]["SendData"] = {}
+        ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
         ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
         Package:close()
+    elseif not(ModeData[OriginAddress]["SendData"]) then
+        ModeData[OriginAddress]["SendData"] = {}
     end
     if not(ModeData[OriginAddress]["SerialData"]) then
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
