@@ -163,7 +163,6 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                         local TempData = OpenSockets[GivenServer]:read()
                         print(type(TempData))
                         print(TempData)
-                        for k,v in pairs(TempData) do print(k,v) end
                         TempData = TempData[1]
                         ReceivedData = ReceivedData .. TempData
                         print(string.len(TempData))
