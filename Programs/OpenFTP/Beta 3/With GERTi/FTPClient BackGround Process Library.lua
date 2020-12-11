@@ -160,16 +160,17 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
                     local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
-                        local TempData =  tostring(OpenSockets[GivenServer]:read()[1])
+                        local TempData = tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
+                        print(ReceivedData)
                         if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
-                            receiving = false --Tidy up
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
                             if FileTable["FileName"] == FileName then
                                 local File = io.open("/OpenFTPLIB/Downloads/" .. tostring(FileName), "w") --Overwrites any existing file. This is intentional
                                 File:write(FileTable["Content"])
                                 File:close()
+                                receiving = false --Tidy up
                                 return true, "OpenFTPLIB/Downloads/" .. tostring(FileName)
                             else
                                 return false, ServerSideErrors[SRL.unserialize(ReceivedData)["State"]] or FILENOTFOUND
