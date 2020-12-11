@@ -123,6 +123,7 @@ function OFTP.RequestPackage(PackageName,GivenServer) -- This function is for re
                         print(GivenServer)
                         for k,v in pairs(OpenSockets) do print(k,v) end
                         OpenSockets[GivenServer]:close()
+                        print(ReceivedData)
                         if SRL.unserialize(ReceivedData)["PackageName"] == nil then
                             return false, ServerSideErrors[SRL.unserialize(ReceivedData)["State"]] or FILENOTFOUND
                         end
