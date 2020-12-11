@@ -161,6 +161,7 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                     OpenSockets[GivenServer]:write(SRL.serialize(SendData)) --send serialized table of what we want
                     local NoError, _, _, ServerResponse = event.pull(15, "GERTData", GivenServer, PCID)
                     if NoError then --if it didnt time out:
+                        os.sleep(0.1)
                         local TempData = OpenSockets[GivenServer]:read()
                         print(type(TempData))
                         print(TempData)
