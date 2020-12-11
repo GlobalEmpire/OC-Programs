@@ -140,6 +140,7 @@ Processes["RequestPackage"] = function (OriginAddress)
     if not(ModeData[OriginAddress]["SerialData"]) then
         print(7)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
+        print(ModeData[OriginAddress]["SendData"])
         print(ModeData[OriginAddress]["SerialData"])
     end
     print(8)
