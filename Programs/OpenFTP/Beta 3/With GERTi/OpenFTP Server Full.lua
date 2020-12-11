@@ -97,14 +97,14 @@ end
 
 local function CloseSocket(EventName, OriginAddress, CID)
     print("C1")
---[[Debug]]for k,v in pairs(TimeOuts) do print(k,v)
+--[[Debug]]for k,v in pairs(TimeOuts) do print(k,v) end
     if TimeOuts[OriginAddress] then
         print("C2")
         event.cancel(TimeOuts[OriginAddress])
         TimeOuts[OriginAddress] = nil
     end	
---[[Debug]]for k,v in pairs(OpenSockets) do print(k,v)
-    if OpenSockets[OriginAddress] and CID == PCID then
+--[[Debug]]for k,v in pairs(OpenSockets) do print(k,v) end
+    if OpenSockets[OriginAddress] and CID == PCID then 
         print("C3")
         OpenSockets[OriginAddress]:close()
         OpenSockets[OriginAddress] = nil
