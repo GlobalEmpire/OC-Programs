@@ -127,8 +127,8 @@ Processes["RequestPackage"] = function (OriginAddress)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
     end
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
-        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
-        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
+        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
+        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
@@ -153,8 +153,8 @@ Processes["RequestPublicFile"] = function (OriginAddress)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
     end
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
-        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-512)
-        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-512)
+        ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
+        ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
