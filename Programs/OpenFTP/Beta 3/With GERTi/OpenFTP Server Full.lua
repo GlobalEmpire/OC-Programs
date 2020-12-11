@@ -96,29 +96,21 @@ local function ReturnSocket(EventName, OriginAddress, CID)
 end
 
 local function CloseSocket(EventName, OriginAddress, DestinationAddress, CID)
-    print("C1",CID,PCID)
---[[Debug]]for k,v in pairs(TimeOuts) do print(k,v) end
-    if TimeOuts[OriginAddress] then
-        print("C2")
+    print("Close",OriginAddress)
+    if TimeOuts[OriginAddress] and CID == PCID then
         event.cancel(TimeOuts[OriginAddress])
         TimeOuts[OriginAddress] = nil
     end	
---[[Debug]]for k,v in pairs(OpenSockets) do print(k,v) end
     if OpenSockets[OriginAddress] and CID == PCID then 
-        print("--------------C3")
         OpenSockets[OriginAddress]:close()
         OpenSockets[OriginAddress] = nil
         ModeData[OriginAddress] = nil
-        print("--------------C4")
     end
-    print()
-    print("--------------C5")
-    print()
 end
 
 local function TimeOutConnection(Address,CID) 
     return function() 
-        CloseSocket(nil,Address,GERTi.getAddress(),CID)
+        CloseSocket("GERTConnectionClose",Address,GERTi.getAddress(),CID)
     end
 end
 
