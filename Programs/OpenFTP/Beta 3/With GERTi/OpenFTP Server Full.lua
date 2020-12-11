@@ -150,6 +150,7 @@ Processes["RequestPackage"] = function (OriginAddress)
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
     print(12)
+    print(ModeData[OriginAddress]["SerialSendData"])
     OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
     if TimeOuts[OriginAddress] then
         print(13)
