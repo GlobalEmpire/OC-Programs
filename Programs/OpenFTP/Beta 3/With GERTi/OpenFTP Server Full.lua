@@ -155,6 +155,7 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
         ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
         ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-511)
+        print(string.len(ModeData[OriginAddress]["SerialSendData"]))
     else
         ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
     end
@@ -182,7 +183,7 @@ end
 local function Decider(EventName, OriginAddress, CID, Data)
     if Data then
         if Data == "GetVersion" then
-            GERTi.send(OriginAddress, Compatibility)
+            GERTi.send(OriginAddress, Compatibility) -- Change this to use a socket instead of GERTi.send for compatibility verification
         end
     elseif CID == PCID and OpenSockets[OriginAddress] then
         os.sleep(3)

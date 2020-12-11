@@ -79,7 +79,7 @@ if not(fs.isDirectory("OpenFTPLIB/Downloads")) then
 end
 
 --Private Functions:
-local function VerifyServer(address,compatibility) -- Verify that the server exists and has a sufficient compatibility level
+local function VerifyServer(address,compatibility) -- Verify that the server exists and has a sufficient compatibility level -- Change this to use a socket instead of GERTi.send
     if address then --Verify that the default address or given address isnt nil 
         --Verify Server exists:
         GERTi.send(address, "GetVersion")
