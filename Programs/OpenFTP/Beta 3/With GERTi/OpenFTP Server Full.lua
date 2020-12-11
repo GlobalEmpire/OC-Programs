@@ -196,6 +196,8 @@ local function Decider(EventName, OriginAddress, CID, Data)
             GERTi.send(OriginAddress, Compatibility)
         end
     elseif CID == PCID and OpenSockets[OriginAddress] then
+        print(ModeData)
+        os.sleep(3)
         if ModeData[OriginAddress] then
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
         else
