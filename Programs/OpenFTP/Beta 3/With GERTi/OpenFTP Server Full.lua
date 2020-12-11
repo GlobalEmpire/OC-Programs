@@ -137,6 +137,7 @@ Processes["RequestPackage"] = function (OriginAddress,Data)
     if not(ModeData[OriginAddress]["SerialData"]) then
         print(7)
         ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
+        print(ModeData[OriginAddress]["SerialData"])
     end
     print(8)
     if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
