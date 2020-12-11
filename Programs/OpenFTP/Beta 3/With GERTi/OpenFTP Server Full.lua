@@ -201,7 +201,7 @@ local function Decider(EventName, OriginAddress, CID, Data)
         end
     elseif CID == PCID and OpenSockets[OriginAddress] then
         if ModeData[OriginAddress] then
-            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
+            Processes[ModeData[OriginAddress]["Mode"]](OriginAddress,ModeData[OriginAddress])
         else
             SetMode(OriginAddress)
         end
