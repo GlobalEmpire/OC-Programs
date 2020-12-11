@@ -162,7 +162,8 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
                     if NoError then --if it didnt time out:
                         local TempData = tostring(OpenSockets[GivenServer]:read()[1])
                         ReceivedData = ReceivedData .. TempData
-                        print(ReceivedData)
+                        string.len(TempData)
+                        string.len(ReceivedData)
                         if string.len(TempData) <= m.maxPacketSize() - 512 then --Make sure you received the whole serialized table, if not, resend the request and obtain the next part until it has everything (to dynamically adapt to modem message size limitations, -512 for GERTi overhead)
                             OpenSockets[GivenServer]:close()
                             local FileTable = SRL.unserialize(ReceivedData)
