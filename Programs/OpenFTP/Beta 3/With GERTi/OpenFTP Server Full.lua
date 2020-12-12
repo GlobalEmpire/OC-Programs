@@ -179,6 +179,45 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
 end
 
+if DC.generateKeyPair then
+    Processes["RequestPrivateFile"] = function (OriginAddress)
+        if not(ModeData[OriginAddress]["PasswordSignature"] and ModeData[OriginAddress]["User"]) then
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidCredentials\"}"))
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+        end
+        if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+            local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
+            ModeData[OriginAddress]["SendData"] = {}
+            ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
+            ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
+            Package:close()
+        elseif not(ModeData[OriginAddress]["SendData"]) then
+            ModeData[OriginAddress]["SendData"] = {}
+        else
+            local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
+            for k,v in pairs(readData) do
+                if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
+                    ModeData[OriginAddress][k] = v
+                end
+            end
+        end
+        if not(ModeData[OriginAddress]["SerialData"]) then
+            ModeData[OriginAddress]["SerialData"] = SRL.serialize(ModeData[OriginAddress]["SendData"])
+        end
+        if string.len(ModeData[OriginAddress]["SerialData"]) > m.maxPacketSize() - 512 then
+            ModeData[OriginAddress]["SerialSendData"] = string.sub(ModeData[OriginAddress]["SerialData"],1,m.maxPacketSize()-511)
+            ModeData[OriginAddress]["SerialData"] = string.sub(ModeData[OriginAddress]["SerialData"],m.maxPacketSize()-510)
+        else
+            ModeData[OriginAddress]["SerialSendData"] = ModeData[OriginAddress]["SerialData"]
+        end
+        OpenSockets[OriginAddress]:write(ModeData[OriginAddress]["SerialSendData"])
+        if TimeOuts[OriginAddress] then
+            event.cancel(TimeOuts[OriginAddress])
+        end
+        TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+    end
+end
+
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = {}
     ModeData[OriginAddress] = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])

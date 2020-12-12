@@ -193,7 +193,7 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
         if DC.generateKeyPair == nil then
             return false, MISSINGHARDWARE
         end
-        if FileName then
+        if FileName then -- Make it break if password false
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
