@@ -21,11 +21,14 @@ I might add the following feature to Beta 4:
     The program then initialises itself as normal following the Profile Config File, but instead of the default path directly under /OpenFTPSERVER it will transpose all of its paths to "/OpenFTPSERVER/Profiles/" .. Profile.
 
 
+
+
     The Config file includes the following parameters:
         GuiMode: string -- This determines how the GUI does (or doesn't) start -- The GUI is global, and does not depend on the profile. If the GUI is launched by a profile, and a subsequent profile is launched with the GUI enabled, it will simply ignore the request to launch the GUI, since it is already open.
             Since the GUI is global, and oversees all active profiles, the GuiMode variable only exists in the Main config file, and not the Profile config files.
         OperatingCID: number -- This determines what CID the program will run and listen on
-        DisabledFeatures: table -- This table contains the names of features that the server can do. Any feature that the server program has, that is in this table with the value of `true` will not be started, but instead an alternative function will be started that responds to any incoming request to utilise this feature that it has been disabled.
+        DisabledFeatures: table -- This table contains the function names of all the features that the server has. In the event the server is updated and there are missing parameters in the table (or on first run when the table does not exist; same case), the non-present features will be added to the list with a default of false (enabling the new features by default). The program does not currently have an auto-updater, but when it does I will add a config option to both toggle the auto-updater and the default state of new features. 
+            Any feature in this table with the value of `true` will be diverted by the decider, the server will simply respond to any matching incoming request that the requested feature has been disabled.
 
 ]]
 local component = require("component")
