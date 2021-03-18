@@ -84,8 +84,10 @@ local function VerifyServer(address,compatibility) -- Verify that the server exi
     if address then --Verify that the default address or given address isnt nil 
         --Verify Server exists:
         GERTi.send(address, "GetVersion")
-        local _, _, _, ServerVersion = event.pull(5, "GERTData",address,-1)
-        if ServerVersion then --Verify Compatibility:
+        local Timeout, _, _, ServerVersion = event.pull(10, "GERTData",address,-1)
+        if Timeout == nil then 
+            return false, TIMEOUT
+        elseif ServerVersion then --Verify Compatibility:
             if ServerVersion == compatibility then
                 return true, 0
             else
@@ -255,6 +257,7 @@ function OFTP.SendFile(FilePath,GivenServer,Password,User)
         if VerSer then
             OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
             if not(event.pull(15, "GERTConnectionID",GivenServer,PCID)) then
+                OpenSockets[GivenServer]:close()
                 return false, TIMEOUT
             end
             SendData["Mode"] = "SendPrivateFile" --setup data to send
