@@ -27,8 +27,10 @@ I might add the following feature to Beta 4:
         GuiMode: string -- This determines how the GUI does (or doesn't) start -- The GUI is global, and does not depend on the profile. If the GUI is launched by a profile, and a subsequent profile is launched with the GUI enabled, it will simply ignore the request to launch the GUI, since it is already open.
             Since the GUI is global, and oversees all active profiles, the GuiMode variable only exists in the Main config file, and not the Profile config files.
         OperatingCID: number -- This determines what CID the program will run and listen on
-        DisabledFeatures: table -- This table contains the function names of all the features that the server has. In the event the server is updated and there are missing parameters in the table (or on first run when the table does not exist; same case), the non-present features will be added to the list with a default of false (enabling the new features by default). The program does not currently have an auto-updater, but when it does I will add a config option to both toggle the auto-updater and the default state of new features. 
-            Any feature in this table with the value of `true` will be diverted by the decider, the server will simply respond to any matching incoming request that the requested feature has been disabled.
+        FeatureProperties: table -- The settings of the features of the server are stored here, their names being the keys of their config tables. This table will be automatically generated if it does not exist, and (in the event of an update, for example) any missing entries will be autocompleted. 
+        Each function will have the following keys: 
+            "disabled" -- false by default (can be changed in the config settings, so updates can occur without needing to immediately reconfigure the server)
+            More will come
 
 ]]
 local component = require("component")
@@ -42,7 +44,7 @@ local SRL = require("serialization")
 
 
 --Program Variables:
-local Compatibility = "Beta3.0"
+local Compatibility = "OFTPBeta3.0"
 local PCID = 98 -- Make this load from config
 local ConfigSettings = {}
 local SendData = {}
@@ -183,12 +185,12 @@ Processes["RequestPublicFile"] = function (OriginAddress)
 end
 
 if DC.generateKeyPair then
-    Processes["RequestPrivateFile"] = function (OriginAddress)
+    Processes["RequestPrivateFile"] = function (OriginAddress) --not yet complete (for example, no password checks)
         if not(ModeData[OriginAddress]["PasswordSignature"] and ModeData[OriginAddress]["User"]) then
-            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidCredentials\"}"))
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InsufficientCredentials\"}"))
             TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
         end
-        if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+    elseif not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
             local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
             ModeData[OriginAddress]["SendData"] = {}
             ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
@@ -220,6 +222,12 @@ if DC.generateKeyPair then
         TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
     end
 end
+
+if DC.generateKeyPair then
+    Processes["CreateUser"] = function (OriginAddress)
+        ModeData[OriginAddress]
+
+
 
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = {}
