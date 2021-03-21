@@ -11,7 +11,7 @@ local fs = require("filesystem")
 local SRL = require("serialization")
 
 --Program Variables:
-local Compatibility = "Beta3.0"
+local Compatibility = "OFTPBeta3.0"
 local PCID = 98
 local ConfigSettings = {}
 local SendData = {}
@@ -19,30 +19,30 @@ local OpenSockets = {}
 local OFTP = {}
 
 --Program Error Codes:
-local UNKNOWNERROR = 0
-local FILENOTFOUND = 1
-local INVALIDCREDENTIALS = 2
-local INVALIDFILELOCATION = 3
+local UNKNOWNERROR = 0 -- This is usually returned when nothing went wrong, simply to assign a value to the error code variable (this is a remnant of my python coding habits). If the program ever returns false, 0 something has gone horribly wrong, and I need to know why
+local FILENOTFOUND = 1 
+local INSUFFICIENTCREDENTIALS = 2 -- This error code is returned when something is missing. It most commonly occurs when the program has not recieved both the username and password (where relevant) but can also occur from the server if it's communicating with a program that is not properly sending all the necessary data. This does not indicate that the credentials are incorrect, only that they have not been provided. For that error, see INVALIDCREDENTIALS
+local INVALIDFILELOCATION = 3 -- One day i'll know why this exists
 local INVALIDSERVERADDRESS = 4
-local NILSERVERADDRESS = 5
-local INCOMPATIBLESERVER = 6
-local UNEXPECTEDRESPONSE = 7
+local NILSERVERADDRESS = 5 -- input error, basically
+local INCOMPATIBLESERVER = 6 -- server is using an incompatible version of the software
+local UNEXPECTEDRESPONSE = 7 -- Something went wrong, the server gave an unexpected response.
 local TIMEOUT = 8
-local MISSINGHARDWARE = 9
-local FILEEXISTS = 10
+local MISSINGHARDWARE = 9 -- Missing a DataCard for services that require encryption
+local FILEEXISTS = 10 -- file already exists
 local NOSPACE = 11
-local USERMODIFICATIONERROR = 12
-local USEREXISTS = 13
-local USERDOESNOTEXIST = 14
-local FEATUREDISABLED = 15
-local FEATUREUNAVAILABLE = 16
-local SERVERSAFEDOWN = 17
+local USERMODIFICATIONERROR = 12 -- Could not execute the requested operation on the requested user for an unknown reason. This is different from invalid credentials. 
+local USEREXISTS = 13 -- If you are trying to create a user but they already exist
+local USERDOESNOTEXIST = 14 -- if you are trying to delete a user but they dont exist
+local FEATUREDISABLED = 15 -- if the feature has been disabled server-side 
+local FEATUREUNAVAILABLE = 16 -- if the feature cant be found on the server (older server version, or lack of datacard)
+local SERVERSAFEDOWN = 17 -- server was forcefully stopped, this is to help the program know it has to restart
 local CONFIGDIRECTORYISFILE = 20
 
 local ServerSideErrors = {}
 ServerSideErrors["Ready"] = UNKNOWNERROR
 ServerSideErrors["FileExists"] = FILEEXISTS
-ServerSideErrors["InvalidCredentials"] = INVALIDCREDENTIALS
+ServerSideErrors["InsufficientCredentials"] = INSUFFICIENTCREDENTIALS
 ServerSideErrors["InsufficientSpace"] = NOSPACE
 ServerSideErrors["UserModificationError"] = USERMODIFICATIONERROR
 ServerSideErrors["UserExists"] = USEREXISTS
@@ -195,7 +195,7 @@ function OFTP.RequestFile(FileName,GivenServer,Password,User) -- This function R
         if DC.generateKeyPair == nil then
             return false, MISSINGHARDWARE
         end
-        if FileName then -- Make it break if password false
+        if FileName then -- I need to make it break if password false
             local VerSer, code = VerifyServer(GivenServer, Compatibility)
             if VerSer then
                 OpenSockets[GivenServer] = GERTi.openSocket(GivenServer, true, PCID) --Open Server Connection
@@ -368,7 +368,7 @@ function OFTP.CreateRemoteUser(GivenServer,Password,User)
             return false, INVALIDSERVERADDRESS
         end
     else
-        return false, INVALIDCREDENTIALS
+        return false, INSUFFICIENTCREDENTIALS
     end
 end
 
@@ -421,7 +421,7 @@ function OFTP.DeleteRemoteUser(GivenServer,Password,User)
             return false, INVALIDSERVERADDRESS
         end
     else
-        return false, INVALIDCREDENTIALS
+        return false, INSUFFICIENTCREDENTIALS
     end
 end
 
@@ -477,7 +477,7 @@ function OFTP.DeleteRemoteFile(FilePath,GivenServer,Password,User)
             return false, INVALIDSERVERADDRESS
         end
     else
-        return false, INVALIDCREDENTIALS
+        return false, INSUFFICIENTCREDENTIALS
     end
 end
 
