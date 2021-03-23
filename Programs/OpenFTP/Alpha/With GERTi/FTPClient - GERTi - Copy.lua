@@ -40,7 +40,9 @@ local function FTPCSend(Path, name) -- Send file function; (Absolute path of fil
 		local file = io.open(Path) -- Open File
 		local P = file:read(4096) -- Read file
 		FTPsocket:write("S.FileContinue") -- Write state
+		os.sleep(0.1)
 		FTPsocket:write(P) -- write data
+		os.sleep(0.1)
 		FTPsocket:write(GERTi.getAddress())	-- write address (unused vestigial code)
 		::pull2::
 		local _, _, Pid = event.pull("GERTData")
