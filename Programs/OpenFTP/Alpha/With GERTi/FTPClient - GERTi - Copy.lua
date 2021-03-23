@@ -70,7 +70,7 @@ local function FTPCSend(Path, name) -- Send file function; (Absolute path of fil
 		local _, _, _, _, _ = event.pull("GERTData")
 		FTPsocket:close() -- close socket
 		ID = FTPsocket:read()
-		return true, ID[2] -- Return file identifier
+		return true, ID[1] -- Return file identifier
 	else
 		FTPsocket:close()
 		return false, "FTP Error - Incorrect State Response" -- if server has not initialised file transfer correctly
