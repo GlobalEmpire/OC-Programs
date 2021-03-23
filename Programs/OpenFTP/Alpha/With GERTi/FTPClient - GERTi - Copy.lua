@@ -50,7 +50,9 @@ local function FTPCSend(Path, name) -- Send file function; (Absolute path of fil
 			print("Sending")
 			P = file:read(4096)
 			FTPsocket:write("S.FileContinue")
+			os.sleep(0.1)
 			FTPsocket:write(P)
+			os.sleep(0.1)
 			FTPsocket:write(GERTi.getAddress())
 			::pull3::
 			local _, _, Pid = event.pull("GERTData")
@@ -58,7 +60,9 @@ local function FTPCSend(Path, name) -- Send file function; (Absolute path of fil
 		end
 		print("Finishing")
 		FTPsocket:write("S.FileFin") -- Write state
+		os.sleep(0.1)
 		FTPsocket:write(0) -- legacy
+		os.sleep(0.1)
 		FTPsocket:write(GERTi.getAddress()) -- Write address (unused; kept for potential compatibility)
 		file:close() -- stop reading file
 		local _, _, _, _, _ = event.pull("GERTData")
