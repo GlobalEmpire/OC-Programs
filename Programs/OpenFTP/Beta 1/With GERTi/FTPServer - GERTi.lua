@@ -90,7 +90,10 @@ event.listen("GERTData", DataGroup)
 
 print("Server Initialised")
 while true do
-local usrstate = io.read()
-if usrstate == "hide" or "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
-
+	local usrstate = io.read()
+	if usrstate == "hide" or "Hide" then 
+		os.exit() 
+	elseif usrstate == "ADDRESS" then 
+		print(GERTi.getAddress()) 
+	end
 end
