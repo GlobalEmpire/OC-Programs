@@ -207,21 +207,44 @@ if DC.generateKeyPair then
             if TimeOuts[OriginAddress] then
                 event.cancel(TimeOuts[OriginAddress])
             end
-            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))            return
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))            
+            return
         elseif not(ModeData[OriginAddress]["PasswordSignature"] and ModeData[OriginAddress]["User"]) then
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InsufficientCredentials\"}"))
             if TimeOuts[OriginAddress] then
                 event.cancel(TimeOuts[OriginAddress])
             end
             TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
-        elseif not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+            return
+        elseif not(ModeData[OriginAddress]["PuKey"]) then
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidEncryption\"}"))
+            if TimeOuts[OriginAddress] then
+                event.cancel(TimeOuts[OriginAddress])
+            end
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
+            return
+        elseif not(ModeData[OriginAddress]["SendData"]) then
+            local UserPassword = --io.open()
+            local PuKey = DC.deserializeKey(ModeData[OriginAddress]["PuKey"])
+            if not(DC.ecdsa(UserPassword,PuKey,ModeData[OriginAddress]["PasswordSignature"])) then
+                OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"UserDoesNotExist\"}"))
+                if TimeOuts[OriginAddress] then
+                    event.cancel(TimeOuts[OriginAddress])
+                end
+                TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
+                return
+            end
+            ModeData[OriginAddress]["SendData"] = {}
+            ModeData[OriginAddress]["SendData"]["PuKey"], ModeData[OriginAddress]["PrKey"] = DC.generateKeyPair()
+            ModeData[OriginAddress]["SharedSecret"] = DC.ecdh(ModeData[OriginAddress]["PrKey"], )
+        
+        
+        and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
             local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
             ModeData[OriginAddress]["SendData"] = {}
             ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
             ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
             Package:close()
-        elseif not(ModeData[OriginAddress]["SendData"]) then
-            ModeData[OriginAddress]["SendData"] = {}
         else
             local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
             for k,v in pairs(readData) do
