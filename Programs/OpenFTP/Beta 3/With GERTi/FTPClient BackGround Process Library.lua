@@ -37,6 +37,7 @@ local USERDOESNOTEXIST = 14 -- if you are trying to delete a user but they dont 
 local FEATUREDISABLED = 15 -- if the feature has been disabled server-side 
 local FEATUREUNAVAILABLE = 16 -- if the feature cant be found on the server (older server version, or lack of datacard)
 local SERVERSAFEDOWN = 17 -- server was forcefully stopped, this is to help the program know it has to restart
+local INVALIDENCRYPTION = 18 -- This happens if either the client or the Server has a nil parameter where a public key should be
 local CONFIGDIRECTORYISFILE = 20
 
 local ServerSideErrors = {}
@@ -51,6 +52,7 @@ ServerSideErrors["Disabled"] = FEATUREDISABLED
 ServerSideErrors["ModeNotFound"] = FEATUREUNAVAILABLE
 ServerSideErrors["SafeDown"] = SERVERSAFEDOWN
 ServerSideErrors["InvalidProvidedData"] = UNKNOWNERROR
+ServerSideErrors["InvalidEncryption"] = INVALIDENCRYPTION
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings

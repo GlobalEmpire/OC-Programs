@@ -1,3 +1,5 @@
+--OpenFTP Beta3 Server; FULL
+local UpdateLink = nil -- This will eventually have a link to the version storage on GitHub, doesnt actually exist yet.
 --Libraries/APIs
 local shell = require("shell")
 local args, opts = shell.parse(...)
@@ -118,6 +120,18 @@ local function TimeOutConnection(Address,CID)
     end
 end
 
+local function ErrorLog(...)
+    local ErrorStuff = table.unpack(...)
+    local ErrorFile = io.open("../.OFTPServerErrorLog", "a")
+    ErrorFile:write("[" .. os.date() .. "] ")
+    for Stuff in ErrorStuff do
+        ErrorFile:write(Stuff)
+        ErrorFile:write("  |  ")
+    end
+    ErrorFile:write("\n")
+    ErrorFile:close()
+end
+
 Processes["RequestPackage"] = function (OriginAddress)
     if not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"])) then
         local Package = io.open("/OpenFTPSERVER/"..Profile.."Packages/"..ModeData[OriginAddress]["Name"],"r")--SECURITY BREACH, get the true form to make sure it never goes up a directory
@@ -148,7 +162,7 @@ Processes["RequestPackage"] = function (OriginAddress)
     if TimeOuts[OriginAddress] then
         event.cancel(TimeOuts[OriginAddress])
     end
-    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
 end
 
 Processes["RequestPublicFile"] = function (OriginAddress)
@@ -181,16 +195,26 @@ Processes["RequestPublicFile"] = function (OriginAddress)
     if TimeOuts[OriginAddress] then
         event.cancel(TimeOuts[OriginAddress])
     end
-    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+    TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
 end
 
 if DC.generateKeyPair then
-    Processes["RequestPrivateFile"] = function (OriginAddress) --not yet complete (for example, no password checks)
-        if not(ModeData[OriginAddress]["PasswordSignature"] and ModeData[OriginAddress]["User"]) then
+    Processes["RequestPrivateFile"] = function (OriginAddress) --not yet complete (for example, no password checks) (Also no PuKey/PrKey from the server)
+        if not(ModeData[OriginAddress]) then
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidProvidedData\"}"))
+            io.stderr:write("RequestPrivateFile got called but ModeData is empty. Information saved to log.")
+            ErrorLog("RequestPrivateFile NilModeData", OriginAddress, OpenSockets[OriginAddress])
+            if TimeOuts[OriginAddress] then
+                event.cancel(TimeOuts[OriginAddress])
+            end
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))            return
+        elseif not(ModeData[OriginAddress]["PasswordSignature"] and ModeData[OriginAddress]["User"]) then
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InsufficientCredentials\"}"))
-            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
-        end
-    elseif not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+            if TimeOuts[OriginAddress] then
+                event.cancel(TimeOuts[OriginAddress])
+            end
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
+        elseif not(ModeData[OriginAddress]["SendData"]) and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
             local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
             ModeData[OriginAddress]["SendData"] = {}
             ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
@@ -201,7 +225,7 @@ if DC.generateKeyPair then
         else
             local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
             for k,v in pairs(readData) do
-                if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" then
+                if k ~= "SendData" and k ~= "SerialData" and k ~= "SerialSendData" and k then
                     ModeData[OriginAddress][k] = v
                 end
             end
@@ -219,15 +243,27 @@ if DC.generateKeyPair then
         if TimeOuts[OriginAddress] then
             event.cancel(TimeOuts[OriginAddress])
         end
-        TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(Address,PCID))
+        TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
     end
 end
 
 if DC.generateKeyPair then
     Processes["CreateUser"] = function (OriginAddress)
-        ModeData[OriginAddress]
-
-
+        if not(ModeData[OriginAddress]) then
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidProvidedData\"}"))
+            io.stderr:write("CreateUser got called but ModeData is empty. Information saved to log.")
+            ErrorLog("CreateUser NilModeData", OriginAddress, OpenSockets[OriginAddress])
+            return
+        elseif ModeData[OriginAddress]["PuKey"] == nil then
+            OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidEncryption\"}"))
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
+        else
+            local Response = {}
+            
+            Response["PuKey"]
+        end
+    end
+end
 
 local function SetMode(OriginAddress)
     ModeData[OriginAddress] = {}
@@ -235,16 +271,29 @@ local function SetMode(OriginAddress)
     if ModeData[OriginAddress]["SendData"] then
         OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"InvalidProvidedData\"}"))
         ModeData[OriginAddress] = nil
+        if TimeOuts[OriginAddress] then
+            event.cancel(TimeOuts[OriginAddress])
+        end
+        TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
     elseif Processes[ModeData[OriginAddress]["Mode"]] then
         if not(ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"]) then
+            if ModeData[OriginAddress]["Name"]
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
             ModeData[OriginAddress] = nil
+            if TimeOuts[OriginAddress] then
+                event.cancel(TimeOuts[OriginAddress])
+            end
+            TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))        
         end
     else
         OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"ModeNotFound\"}"))
         ModeData[OriginAddress] = nil
+        if TimeOuts[OriginAddress] then
+            event.cancel(TimeOuts[OriginAddress])
+        end
+        TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))    
     end
 end
 
