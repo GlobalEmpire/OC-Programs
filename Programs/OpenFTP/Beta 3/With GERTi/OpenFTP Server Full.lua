@@ -235,16 +235,16 @@ if DC.generateKeyPair then
                 return
             end
             ModeData[OriginAddress]["SendData"] = {}
+            local fileExists = fs.exists("/OpenFTP/".. Modedata[OriginAddress]["User"] .. "/" .. ModeData[OriginAddress]["Name"])
+            ModeData[OriginAddress]["SendData"]["State"] = "Ready"
             ModeData[OriginAddress]["SendData"]["PuKey"], ModeData[OriginAddress]["PrKey"] = DC.generateKeyPair()
-            ModeData[OriginAddress]["SharedSecret"] = DC.ecdh(ModeData[OriginAddress]["PrKey"], )
-        
-        
-        and fs.exists("OpenFTPSERVER/"..Profile.."User/"..ModeData[OriginAddress]["Name"]) and not(fs.isDirectory("OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"])) then
+            local SharedSecret = DC.ecdh(ModeData[OriginAddress]["PrKey"], PuKey)
+            local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
             local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
-            ModeData[OriginAddress]["SendData"] = {}
-            ModeData[OriginAddress]["SendData"]["FileName"] = ModeData[OriginAddress]["Name"]
-            ModeData[OriginAddress]["SendData"]["Content"] = Package:read("*a")
+            ModeData[OriginAddress]["SendData"]["FileName"] = fileExists and ModeData[OriginAddress]["Name"]
+            local UnencryptedContent = Package:read("*a")
             Package:close()
+            ModeData[OriginAddress]["SendData"]["Content"] = DC.encrypt(UnencryptedContent,TruncatedSHA256Key,1)
         else
             local readData = SRL.unserialize(OpenSockets[OriginAddress]:read()[1])
             for k,v in pairs(readData) do
@@ -300,7 +300,12 @@ local function SetMode(OriginAddress)
         TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
     elseif Processes[ModeData[OriginAddress]["Mode"]] then
         if not(ConfigSettings["DisabledFeatures"][ModeData[OriginAddress]["Mode"]]["disabled"]) then
-            if ModeData[OriginAddress]["Name"]
+            if ModeData[OriginAddress]["Name"] then
+                ModeData[OriginAddress]["Name"] = fs.name(ModeData[OriginAddress]["Name"])
+            end
+            if ModeData[OriginAddress]["User"] then
+                ModeData[OriginAddress]["User"] = fs.name(ModeData[OriginAddress]["User"])
+            end
             Processes[ModeData[OriginAddress]["Mode"]](OriginAddress)
         else
             OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"Disabled\"}"))
