@@ -38,4 +38,4 @@ local function update()
     end
 end
 update()
-event.timer(900, update, math.huge)
+event.timer(86400, update, math.huge)
