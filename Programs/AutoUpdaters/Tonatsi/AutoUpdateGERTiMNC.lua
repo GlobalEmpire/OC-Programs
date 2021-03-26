@@ -1,3 +1,4 @@
+local component = require("component")
 if component.filesystem.isReadOnly() then 
     return 
 end
