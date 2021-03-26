@@ -12,6 +12,7 @@ if not(component.isAvailable("internet")) then
 end
 if not(fs.exists("/GERTiMNCautoUpdateError")) then    
     local internet = require("internet")
+    local event = require("event")
     if fs.exists("/etc/rc.d/GERTiMNC.lua") then
         local GERTiMNCVersionRequest = internet.request("https://raw.githubusercontent.com/leothehero/OC-Programs/AutoUpdaters/Programs/AutoUpdaters/Tonatsi/GERTiMNC-latestStableVersion.txt")
         local GERTiMNCLatestVersion = GERTiMNCVersionRequest()
@@ -27,4 +28,9 @@ if not(fs.exists("/GERTiMNCautoUpdateError")) then
         GERTiMNC:write(element)
     end
     GERTiMNC:close()
+    local listener = io.open("/.GERTiMNCShutdownListener", "r")
+    local ID = tonumber(listener:read())
+    listener:close()
+    event.cancel(ID)
+    computer.shutdown(true)
 end
