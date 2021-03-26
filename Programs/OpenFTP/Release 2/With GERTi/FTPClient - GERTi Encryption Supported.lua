@@ -14,7 +14,7 @@ GERTi.send(FTPaddress, "GetVersion")
 local _, _, _, ServerVersion = event.pull("GERTData")
 if ServerVersion ~= Compatibility then 
 	print("The Selected Server does not meet the compatibility requirements of this client program version. Your client is at version ", Compatibility, " while the server is at version ", ServerVersion, ". Please Update either your program or the server. Report any bugs and/or errors that may have forced you to downgrade to lower versions.") 
-	print("You can override the compatibility check, however it could cause problems. We do not bug-fix issues between incompatible clients, unless it also affects same-version clients. We will re-organise the compatibility scheme once we have implemented all the features we want in the base program. [Y/N]: ")
+	print("You can override the compatibility check, however it could cause problems. We do not bug-fix issues between incompatible clients, unless it also effects same-version clients. We will re-organise the compatibility scheme once we have implemented all the features we want in the base program. [Y/N]: ")
 	local response = tostring(io.read())
 	if response == "Y" then 
 		print("Overriding")
