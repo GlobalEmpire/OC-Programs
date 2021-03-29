@@ -1,43 +1,78 @@
+-- AUGCVR 2
 local component = require("component")
-local computer = require("computer")
 if component.filesystem.isReadOnly() then 
     return 
 end
-local fs = require("filesystem")
 if not(component.isAvailable("internet")) then
-    if not(fs.exists("/GERTiClientAutoUpdateError")) then
-        local errorfile = io.open("/GERTiClientAutoUpdateError", "w")
-        errorfile:write("No Internet Card Found, aborting auto update process until this file is deleted.")
-        errorfile:close() 
-    end
+    local errorfile = io.open("/GERTiClientAutoUpdateError", "a")
+    errorfile:write(str(os.time()) .. " | No Internet Card Found, aborting auto update.\n")
+    errorfile:close()
+    return
 end
+local computer = require("computer")
+local thread = require("thread")
+local fs = require("filesystem")
 local event = require("event")
+local internet = require("internet")
 local function update()
-    if not(fs.exists("/GERTiClientAutoUpdateError")) then    
-        local internet = require("internet")
+    thread.create(function()
         if fs.exists("/lib/GERTiClient.lua") then
-            local GERTiClientVersionRequest = internet.request("https://raw.githubusercontent.com/leothehero/OC-Programs/AutoUpdaters/Programs/AutoUpdaters/Tonatsi/GERTiClient-latestStableVersion.txt")
-            local GERTiClientLatestVersion = GERTiClientVersionRequest()
+            local GERTiClientVersionRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/Update%20Data/GERTiClient%20Stable%20Release.txt")
+            local RequestString = ""
+            for element in GERTiClientVersionRequest do
+                RequestString = RequestString .. element
+            end
+            local Glines = {}
+            for s in RequestString:gmatch("[^\n]+") do
+                table.insert(Glines, s)
+            end
             local GERTiClient = io.open("/lib/GERTiClient.lua", "r")
             local GERTiClientVersion = GERTiClient:read("*l")
-            if GERTiClientVersion == GERTiClientLatestVersion then
-                return
+            if GERTiClientVersion == Glines[1] then
+                return true
             end
         end
-        local GERTiClientRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/GERTiClient.lua")
+        local GERTiClientRequest = internet.request(Glines[2])
         local GERTiClient = io.open("/lib/GERTiClient.lua", "w")
         for element in GERTiClientRequest do
             GERTiClient:write(element)
         end
         GERTiClient:close()
-        local function beep()
-            computer.beep(2000)
-            os.sleep(0.5)
-            computer.beep(1000)
+        event.push("ProgramUpdate","GERTiClient",not(not(Glines[3])))
+        return
+    end):detach()
+    thread.create(function()
+        local GCAUVR = internet.request("https://raw.githubusercontent.com/GlobalEmpire/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GCAUS.txt")
+        local RequestString = ""
+        for element in GCAUVR do
+            RequestString = RequestString .. element
         end
-        event.timer(15,beep,math.huge)
+        local AUlines = {}
+        for s in RequestString:gmatch("[^\n]+") do
+            table.insert(AUlines, s)
+        end
+        local AUGC = io.open("/lib/AutoUpdateGERTiClient.lua", "r")
+        local AUGCV = AUGC:read("*l")
+        if AUGCV == AUlines[1] then
+            return true
+        end
+        local AUGCR = internet.request(AUlines[2])
+        local AUGC = io.open("/lib/AutoUpdateGERTiClient.lua", "w")
+        for element in AUGCR do
+            AUGC:write(element)
+        end
+        AUGC:close()
+        event.push("ProgramUpdate","AUGC",not(not(AUlines[3])))
+        return
+    end):detach()
+end
+update()
+local UpdateTimer = event.timer(86400, update, math.huge)
+local function updateReboot(EventName,ProgramName,Reboot)
+    if ProgramName == "AUGC" and Reboot then 
+        event.cancel(UpdateTimer)
+        os.execute("/lib/AutoUpdateGERTiClient.lua")
         return false
     end
 end
-update()
-event.timer(86400, update, math.huge)
+event.listen("ProgramUpdate")
