@@ -75,4 +75,4 @@ local function updateReboot(EventName,ProgramName,Reboot)
         return false
     end
 end
-event.listen("ProgramUpdate")
+event.listen("ProgramUpdate",updateReboot)
