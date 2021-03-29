@@ -1,4 +1,5 @@
 local component = require("component")
+local computer = require("computer")
 if component.filesystem.isReadOnly() then 
     return 
 end
@@ -35,6 +36,7 @@ local function update()
             computer.beep(1000)
         end
         event.timer(15,beep,math.huge)
+        return false
     end
 end
 update()
