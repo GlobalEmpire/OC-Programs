@@ -1,0 +1,3 @@
+-- AUGM V2
+https://raw.githubusercontent.com/GlobalEmpire/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Updaters/AutoUpdateGERTiMNC.lua
+true

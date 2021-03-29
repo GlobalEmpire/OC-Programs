@@ -1,10 +1,10 @@
--- AUGCV 2
+-- AUGC V2
 local component = require("component")
 if component.filesystem.isReadOnly() then 
     return 
 end
 if not(component.isAvailable("internet")) then
-    local errorfile = io.open("/GERTiClientAutoUpdateError", "a")
+    local errorfile = io.open("/GCAUError", "a")
     errorfile:write(str(os.time()) .. " | No Internet Card Found, aborting auto update.\n")
     errorfile:close()
     return
