@@ -1,4 +1,4 @@
--- AUGCVR 2
+-- AUGCV 2
 local component = require("component")
 if component.filesystem.isReadOnly() then 
     return 
