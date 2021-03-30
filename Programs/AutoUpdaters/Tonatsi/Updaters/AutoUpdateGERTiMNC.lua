@@ -1,4 +1,4 @@
--- AUGM V2 Patch 1
+-- AUGM V2
 local component = require("component")
 if component.filesystem.isReadOnly() then 
     return 
@@ -16,19 +16,18 @@ local event = require("event")
 local internet = require("internet")
 local function update()
     thread.create(function()
-        local GERTiMNCVersionRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/Update%20Data/GERTiMNC%20Stable%20Release.txt")
-        local RequestString = ""
-        for element in GERTiMNCVersionRequest do
-            RequestString = RequestString .. element
-        end
-        local Glines = {}
-        for s in RequestString:gmatch("[^\n]+") do
-            table.insert(Glines, s)
-        end
         if fs.exists("/etc/rc.d/GERTiMNC.lua") then
+            local GERTiMNCVersionRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/Update%20Data/GERTiMNC%20Stable%20Release.txt")
+            local RequestString = ""
+            for element in GERTiMNCVersionRequest do
+                RequestString = RequestString .. element
+            end
+            local Glines = {}
+            for s in RequestString:gmatch("[^\n]+") do
+                table.insert(Glines, s)
+            end
             local GERTiMNC = io.open("/etc/rc.d/GERTiMNC.lua", "r")
             local GERTiMNCVersion = GERTiMNC:read("*l")
-            GERTiMNC:close()
             if GERTiMNCVersion == Glines[1] then
                 return true
             end
@@ -43,7 +42,7 @@ local function update()
         return
     end):detach()
     thread.create(function()
-        local GMAUVR = internet.request("https://raw.githubusercontent.com/Leothehero/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GMAUS.txt")
+        local GMAUVR = internet.request("https://raw.githubusercontent.com/GlobalEmpire/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GMAUS.txt")
         local RequestString = ""
         for element in GMAUVR do
             RequestString = RequestString .. element
@@ -54,7 +53,6 @@ local function update()
         end
         local AUGM = io.open("/lib/AutoUpdateGERTiMNC.lua", "r")
         local AUGMV = AUGM:read("*l")
-        AUGM:close()
         if AUGMV == AUlines[1] then
             return true
         end
