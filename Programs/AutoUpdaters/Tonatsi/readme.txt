@@ -1,0 +1,1 @@
+All AutoUpdaters in this folder must be placed in /lib/ to work. It is recommended to make them autorun through require("") in .autorun to ensure that the relevant modules are available.

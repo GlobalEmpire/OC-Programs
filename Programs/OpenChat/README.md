@@ -8,10 +8,12 @@ In the future I tend to add command support a long with an API so that external 
 
 Installation
 
-To install this, you will need a GERTiMNC Server, GERTiClient.lua in /lib
+1) You will need a configured GERTi network running. The computers running server.lua and client.lua must have 
+GERTiClient.lua running.
 
-and to install these libraries :
-
+2) Install these libraries :
 pastebin run ryhyXUKZ
 
 (GUI, advancedLua, color, doubleBuffering, image and OCIF)
+3) Install server.lua on one computer and run it.
+4) Install client.lua on at least two computers, and run it after running server.lua
