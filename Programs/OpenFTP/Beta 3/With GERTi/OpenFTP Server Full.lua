@@ -11,7 +11,7 @@ Recognised Options:
 -a :: All, If launched alone, launches all existing profiles, if present alongside another option, applies its effects to all profiles, and ignores any passed profile. If multiple profiles have differing values, it will not toggle each individually, but instead activate them all. Only if all are active will it deactivate. I.E. if profile 1 debug is off and profile 2 debug is on, passing -da will always turn profile 1 on, and only when both 1 and 2 are on will it turn both of them off (Use -do in this case). Is compatible with -rdlo.
 -o :: Resets all previous option states on the profile provided in the first argument, or the default profile otherwise, i.e.: it disables Debug, Loud, ... regardless of prior state. If passed with other options, it will instead reset said option in the specified profile. Compatible with -dla.
 
-Recognised Argument patterns:
+Recognised Argument patterns: -- Might scrap in favour of rc arguments and load
 "NoGui" - Launches the program in Default mode, but without GUI. Does nothing if GUI is disabled in the Default Config File
 "ForceGui" - Launches the program in Default, and ensures the the Full GUI is launched regardless of any other set parameters.
 "SafeDown" - This Argument must be passed alone, with no options. This stops the program and all profiles, regardless of whatever they might be doing. This is intended to be used in the event that a shutdown is imminent, and that there is not enough time to wait for anything to complete. The program will immediately stop accepting new connections, kill all existing processes related to the program, send "SafeDown" to all open connections, to alert them to the immediate interruption of service, and then close all connections. It is preferred to use the argument "FinishAll" when circumstances allow, as it will push the "OFTPSAFE" event when finished.
@@ -47,7 +47,7 @@ local SRL = require("serialization")
 
 --Program Variables:
 local Compatibility = "OFTPBeta3.0"
-local PCID = 98 -- Make this load from config
+local PCID = 98 -- Make this load from config, or profile
 local ConfigSettings = {}
 local SendData = {}
 local OpenSockets = {}
