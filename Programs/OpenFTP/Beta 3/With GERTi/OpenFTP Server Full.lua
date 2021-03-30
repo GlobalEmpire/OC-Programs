@@ -54,7 +54,7 @@ local OpenSockets = {}
 local ModeData = {}
 local Processes = {}
 local TimeOuts = {}
-local Profile = ""
+local Profile = "Default"
 
 --Directory Checks:
 if fs.isDirectory(".config") then -- If the config file exists, read it and load its settings
@@ -66,7 +66,7 @@ if fs.isDirectory(".config") then -- If the config file exists, read it and load
 else
     args[1] = "FirstRun"
 end
-if not(fs.isDirectory("OpenFTPSERVER")) then -- Ensures that the OpenFTPSERVER directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
+--[[if not(fs.isDirectory("OpenFTPSERVER")) then -- Ensures that the OpenFTPSERVER directory and its sub-directories exist, and create them if not. It will also rename any files that share the directories' names to name.oldFile, to allow the directory to be placed.
     if fs.exists("OpenFTPSERVER") then
         fs.rename("OpenFTPSERVER", "OpenFTPSERVER.oldFile")
     end
@@ -95,7 +95,7 @@ if not(fs.isDirectory("OpenFTPSERVER/Profiles")) then
         fs.rename("OpenFTPSERVER/Profiles", "OpenFTPSERVER/Profiles.oldFile")
     end
     fs.makeDirectory("OpenFTPSERVER/Profiles")
-end
+end]] --I need to put this in firstrun
 
 --Local Functions
 local function ReturnSocket(EventName, OriginAddress, CID)
@@ -224,9 +224,10 @@ if DC.generateKeyPair then
             TimeOuts[OriginAddress] = event.timer(15,TimeOutConnection(OriginAddress,PCID))
             return
         elseif not(ModeData[OriginAddress]["SendData"]) then
-            local UserPassword = --io.open()
+            local UserPasswordFile = io.open("/OpenFTP/".. Modedata[OriginAddress]["User"] .. "/.profile")
+            local UserProfile = SRL.unserialize(UserPasswordFile:read())
             local PuKey = DC.deserializeKey(ModeData[OriginAddress]["PuKey"])
-            if not(DC.ecdsa(UserPassword,PuKey,ModeData[OriginAddress]["PasswordSignature"])) then
+            if not(DC.ecdsa(UserProfile["password"],PuKey,ModeData[OriginAddress]["PasswordSignature"])) then
                 OpenSockets[OriginAddress]:write(SRL.serialize("{State=\"UserDoesNotExist\"}"))
                 if TimeOuts[OriginAddress] then
                     event.cancel(TimeOuts[OriginAddress])
@@ -240,7 +241,7 @@ if DC.generateKeyPair then
             ModeData[OriginAddress]["SendData"]["PuKey"], ModeData[OriginAddress]["PrKey"] = DC.generateKeyPair()
             local SharedSecret = DC.ecdh(ModeData[OriginAddress]["PrKey"], PuKey)
             local TruncatedSHA256Key = string.sub(DC.sha256(SharedSecret),1,16)
-            local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") --SECURITY BREACH, get the true form to make sure it never goes up a directory
+            local Package = io.open("/OpenFTPSERVER/"..Profile.."Public/"..ModeData[OriginAddress]["Name"],"r") 
             ModeData[OriginAddress]["SendData"]["FileName"] = fileExists and ModeData[OriginAddress]["Name"]
             local UnencryptedContent = Package:read("*a")
             Package:close()
