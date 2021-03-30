@@ -43,7 +43,7 @@ local function update()
         return
     end):detach()
     thread.create(function()
-        local GCAUVR = internet.request("https://raw.githubusercontent.com/GlobalEmpire/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GCAUS.txt")
+        local GCAUVR = internet.request("https://raw.githubusercontent.com/Leothehero/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GCAUS.txt")
         local RequestString = ""
         for element in GCAUVR do
             RequestString = RequestString .. element
