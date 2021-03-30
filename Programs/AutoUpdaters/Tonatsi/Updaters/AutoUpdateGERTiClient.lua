@@ -1,4 +1,4 @@
--- AUGC V2
+-- AUGC V2 Patch 1
 local component = require("component")
 if component.filesystem.isReadOnly() then 
     return 
@@ -16,18 +16,19 @@ local event = require("event")
 local internet = require("internet")
 local function update()
     thread.create(function()
+        local GERTiClientVersionRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/Update%20Data/GERTiClient%20Stable%20Release.txt")
+        local RequestString = ""
+        for element in GERTiClientVersionRequest do
+            RequestString = RequestString .. element
+        end
+        local Glines = {}
+        for s in RequestString:gmatch("[^\n]+") do
+            table.insert(Glines, s)
+        end
         if fs.exists("/lib/GERTiClient.lua") then
-            local GERTiClientVersionRequest = internet.request("https://raw.githubusercontent.com/GlobalEmpire/GERT/master/GERTi/Update%20Data/GERTiClient%20Stable%20Release.txt")
-            local RequestString = ""
-            for element in GERTiClientVersionRequest do
-                RequestString = RequestString .. element
-            end
-            local Glines = {}
-            for s in RequestString:gmatch("[^\n]+") do
-                table.insert(Glines, s)
-            end
             local GERTiClient = io.open("/lib/GERTiClient.lua", "r")
             local GERTiClientVersion = GERTiClient:read("*l")
+            GERTiClient:close()
             if GERTiClientVersion == Glines[1] then
                 return true
             end
@@ -42,7 +43,7 @@ local function update()
         return
     end):detach()
     thread.create(function()
-        local GCAUVR = internet.request("https://raw.githubusercontent.com/GlobalEmpire/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GCAUS.txt")
+        local GCAUVR = internet.request("https://raw.githubusercontent.com/Leothehero/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Version%20Files/GERTi/GCAUS.txt")
         local RequestString = ""
         for element in GCAUVR do
             RequestString = RequestString .. element
@@ -53,6 +54,7 @@ local function update()
         end
         local AUGC = io.open("/lib/AutoUpdateGERTiClient.lua", "r")
         local AUGCV = AUGC:read("*l")
+        AUGC:close()
         if AUGCV == AUlines[1] then
             return true
         end
