@@ -1,3 +1,3 @@
--- AUGC V2 Patch 1
-https://raw.githubusercontent.com/Leothehero/OC-Programs/master/Programs/AutoUpdaters/Tonatsi/Updaters/AutoUpdateGERTiClient.lua
+-- AUGC V2 Patch 1 Experimental
+https://raw.githubusercontent.com/leothehero/OC-Programs/AutoUpdaters/Programs/AutoUpdaters/Tonatsi/Updaters/GERTi/AutoUpdateGERTiClient%20Experimental.lua
 true
