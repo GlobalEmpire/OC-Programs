@@ -1,6 +1,7 @@
 local term = require("term")
 local component = require("component")
 local keyboard = require("keyboard")
+local event = require("event")
 
 local gpu = component.gpu
 -- The entry parameter is a string.
@@ -71,7 +72,7 @@ end
 
 local OpenTUI = {}
 
-OpenTUI.PrintLogo =  function (Text,ScreenWidth,ScreenHeight)
+OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
     checkArg(1, Text, "string")
     local ScreenWidth, ScreenHeight = term.getViewport()
     local TextOffset = string.len(Text)/2+1
@@ -111,13 +112,14 @@ end
 
 
 -- Writes the supplied string with the supplied colour. 
-OpenTUI.ColourText = function (String,colour)
-    local OldColour, _ = gpu.setForeground(colour)
+OpenTUI.ColourText = function (String,Colour)
+    checkArg(1,String,"string")
+    checkArg(2,Colour,"number")
+    local OldColour, _ = gpu.setForeground(Colour)
     term.write(String,true)
     gpu.setForeground(OldColour)
     return
 end
-
 
 --[[
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
@@ -195,4 +197,5 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     gpu.setForeground(OriginColour)
     return true, Selected
 end
+
 return OpenTUI
