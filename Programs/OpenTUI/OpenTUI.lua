@@ -1,16 +1,79 @@
 local term = require("term")
 local component = require("component")
+local keyboard = require("keyboard")
+
 local gpu = component.gpu
 -- The entry parameter is a string.
 -- Takes a given string, and writes to the center of the screen at the same height as the cursor, surrounded in an ASCII box. 
 -- It tries a different fancy thing if it only has one line to work with, and simply does nothing otherwise.
 -- Returns nothing.
 
+
+local function DrawBoxLeft(stringlen,CursorY,ScreenWidth) -- draws left selection cursor for BinaryChoice function
+    local TextRows = {}
+    TextRows[1]="╔"
+    for LoopCount=1,stringlen,1 do
+        TextRows[1] = TextRows[1] .. "═"
+    end
+    TextRows[1] = TextRows[1] .. "╗"
+    TextRows[3]="╚"
+    for LoopCount=1,stringlen,1 do
+        TextRows[3] = TextRows[3] .. "═"
+    end
+    TextRows[3] = TextRows[3] .. "╝"
+    for LoopCount=1,3,2 do 
+        term.setCursor(ScreenWidth/2-stringlen-2,CursorY+LoopCount-3)
+        term.write(TextRows[LoopCount])
+    end
+    term.setCursor(ScreenWidth/2-stringlen-2,CursorY-1)
+    term.write("║")
+    term.setCursor(ScreenWidth/2-1,CursorY-1)
+    term.write("║")
+    term.setCursor(1,CursorY)
+    return
+end
+
+local function DrawBoxRight(stringlen,CursorY,ScreenWidth) -- draws right selection cursor for BinaryChoice function
+    local TextRows = {}
+    TextRows[1]="╔"
+    for LoopCount=1,stringlen,1 do
+        TextRows[1] = TextRows[1] .. "═"
+    end
+    TextRows[1] = TextRows[1] .. "╗"
+    TextRows[3]="╚"
+    for LoopCount=1,stringlen,1 do
+        TextRows[3] = TextRows[3] .. "═"
+    end
+    TextRows[3] = TextRows[3] .. "╝"
+    for LoopCount=1,3,2 do 
+        term.setCursor(ScreenWidth/2,CursorY+LoopCount-3)
+        term.write(TextRows[LoopCount])
+    end
+    term.setCursor(ScreenWidth/2,CursorY-1)
+    term.write("║")
+    term.setCursor(ScreenWidth/2+stringlen+1,CursorY-1)
+    term.write("║")
+    term.setCursor(1,CursorY)
+    return
+end
+
+--I can and should merge DrawBoxRight and DrawBoxLeft, by getting the X positions of the cursor, calculating them at the start based on whether it's left or right, and then feeding it into the remaining code which is identical.
+
+local function ClearBox(LeftLen,RightLen,CursorY,ScreenWidth)
+    gpu.fill(1,CursorY-2,ScreenWidth,1," ")
+    gpu.fill(1,CursorY,ScreenWidth,1," ")
+    gpu.fill(ScreenWidth/2-LeftLen-2,CursorY-1,1,1," ")
+    gpu.fill(ScreenWidth/2-1,CursorY-1,2,1," ")
+    gpu.fill(ScreenWidth/2+1+RightLen,CursorY-1,1,1," ")
+    return
+end
+
+
 local OpenTUI = {}
 
 OpenTUI.PrintLogo =  function (Text,ScreenWidth,ScreenHeight)
     checkArg(1, Text, "string")
-    ScreenWidth, ScreenHeight = term.getViewport()
+    local ScreenWidth, ScreenHeight = term.getViewport()
     local TextOffset = string.len(Text)/2+1
     local Middle = ScreenWidth/2
     local StartPoint = Middle-TextOffset
@@ -47,7 +110,7 @@ OpenTUI.PrintLogo =  function (Text,ScreenWidth,ScreenHeight)
 end
 
 
--- Prints the supplied string with the supplied colour and then reverts it.
+-- Writes the supplied string with the supplied colour. 
 OpenTUI.ColourText = function (String,colour)
     local OldColour, _ = gpu.setForeground(EmphasisColour)
     term.write(String,true)
@@ -58,7 +121,11 @@ end
 --[[
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
         The user can use the arrow keys to select and enter to confirm their choice. 
-        The program will return 1 for the left option and 2 for the right option.
+        The program will return two parameters:
+            The first parameter determines whether or not there was enough space on the viewport to fully display the menu.
+            The second option returns either an error code or a selection:
+                If selection: 1 for the left option and 2 for the right option.
+                If Error: 1 for not enough space. More pending.
         If AllowAbbreviations is true, the user can press a letter key corresponding to the first letter in either option to select and confirm it instantly. The feature is forcefully set to false if both strings start with the same character 
         ]]
 OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColour,SelectionColour,AllowAbbreviations) 
@@ -70,13 +137,61 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     checkArg(4, RightTextColour, "number")
     SelectionColour = SelectionColour or 0xffffff
     checkArg(5, SelectionColour, "number")
-    AllowAbbreviations = AllowAbbreviations or false
+    AllowAbbreviations = not(not((AllowAbbreviations or false) and not(string.lower(string.sub(LeftText,1,1)) == string.lower(string.sub(RightText,1,1))) and string.match(string.lower(string.sub(LeftText,1,1)),"%a") and string.match(string.lower(string.sub(RightText,1,1)),"%a")))
     checkArg(6, AllowAbbreviations, "boolean")
-    if string.lower(string.sub(LeftText,1,1)) == string.lower(string.sub(RightText,1,1)) then
-        AllowAbbreviations = false
+    local ScreenWidth, ScreenHeight = term.getViewport()
+    local LeftLen = string.len(LeftText)
+    local RightLen = string.len(RightText)
+    if ScreenHeight < 3 or ScreenWidth < LeftLen + RightLen + 4 then -- ensure enough space
+        return false, 1
     end
-    
+    local Selected = 1
+    term.write("\n\n\n")
+    local CX,CY = term.getCursor()
+    local OriginColour = gpu.setForeground(LeftTextColour) -- setup text and its colour
+    term.setCursor(ScreenWidth/2-LeftLen-1,CY-1)
+    term.write(LeftText)
+    gpu.setForeground(RightTextColour)
+    term.setCursor(ScreenWidth/2+1,CY-1)
+    term.write(RightText)
+    gpu.setForeground(SelectionColour)
+    DrawBoxLeft(LeftLen,CY,ScreenWidth)
+    local confirmation = true
+    local AcceptedKeys = {} -- setup which key presses the program will care about
+    AcceptedKeys[205] = true
+    AcceptedKeys[203] = true
+    AcceptedKeys[28] = true
+    if AllowAbbreviations then -- if you can answer by using the first letter of the string, their codes are added automatically. I might provide an additional parameter which overrides this, to allow you to provide your own character per string instead of the first character of each string.
+        AcceptedKeys[keyboard.keys[string.lower(string.sub(LeftText,1,1))]] = 1
+        AcceptedKeys[keyboard.keys[string.lower(string.sub(RightText,1,1))]] = 2
+    end
+    while confirmation do
+        local _, _, _, KeyCode = event.pull("key_down")
+        if AcceptedKeys[KeyCode] then
+            if KeyCode == 28 then
+                confirmation = false
+            elseif KeyCode == 205 then
+                Selected = 2
+                ClearBox(LeftLen,RightLen,CY,ScreenWidth)
+                DrawBoxRight(RightLen,CY,ScreenWidth)
+            elseif KeyCode == 203 then
+                Selected = 1
+                ClearBox(LeftLen,RightLen,CY,ScreenWidth)
+                DrawBoxLeft(LeftLen,CY,ScreenWidth)
+            else
+                Selected = AcceptedKeys[KeyCode]
+                confirmation = false
+            end
+        end
+    end
+    ClearBox(LeftLen,RightLen,CY,ScreenWidth)
+    gpu.setForeground(0x00ff00)
+    if Selected == 1 then
+        DrawBoxLeft(LeftLen,CY,ScreenWidth)
+    else
+        DrawBoxRight(RightLen,CY,ScreenWidth)
+    end
+    gpu.setForeground(OriginColour)
+    return true, Selected
 end
-
-
 return OpenTUI
