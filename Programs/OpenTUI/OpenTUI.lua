@@ -199,8 +199,8 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
 end
 
 OpenTUI.ParamList = function (ParamTable,KeyColour,ReadOnly)
-    checkArg(1,ParamList, "table")
-    KeyColour = KeyColour or 0xffffff
+    checkArg(1,ParamTable, "table") -- Copy the table into a new one for discarding
+    KeyColour = KeyColour or 0xe6db74
     checkArg(2,KeyColour, "number")
     ReadOnly = ReadOnly or false
     checkArg(3,ReadOnly, "boolean")
@@ -209,20 +209,24 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,ReadOnly)
         term.write(value .. "\n")
     end
     local LoopVar = not(ReadOnly)
+    local UserReset = false
     while LoopVar do
         local userResponse = io.read()
         if string.lower(userResponse) == "confirm" then
             LoopVar = false
         elseif string.lower(userResponse) == "reset" then
-            fs.remove("../OpenPager/.Config")
-            print("Deleted")
+            UserReset = true
             LoopVar = false
-        elseif ConfigSettings[userResponse] ~= nil then
-            local userResponse2 = toboolean(io.read())
+        elseif string.lower(userResponse) == "discard" then
+            LoopVar = false
+            "[[discard]]"
+        elseif ParamTable[userResponse] ~= nil then
+            local CX,CY = term.getCursor()
+            term.write("Modifying " .. tostring(userResponse) .. " : ")
+            local userResponse2 = io.read() -- maybe use term.read(), check documentation and how it could be useful. like removing the "cursor to new line when modified". Also, have the param list update when a change is made.
             if type(userResponse2) == type(ConfigSettings[userResponse]) then
                 ConfigSettings[userResponse] = userResponse2
-                print("Successfully Updated")
-                io.stderr:write("====================\n")
+                term.write("Confirmed")
             else
                 print("Incorrect variable value type")
             end
