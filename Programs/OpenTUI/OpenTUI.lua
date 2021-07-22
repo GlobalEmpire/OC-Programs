@@ -112,9 +112,10 @@ end
 
 -- Writes the supplied string with the supplied colour. 
 OpenTUI.ColourText = function (String,colour)
-    local OldColour, _ = gpu.setForeground(EmphasisColour)
+    local OldColour, _ = gpu.setForeground(colour)
     term.write(String,true)
     gpu.setForeground(OldColour)
+    return
 end
 
 
