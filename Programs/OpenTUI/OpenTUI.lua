@@ -145,7 +145,7 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     local ScreenWidth, ScreenHeight = term.getViewport()
     local LeftLen = string.len(LeftText)
     local RightLen = string.len(RightText)
-    if ScreenHeight < 3 or ScreenWidth < LeftLen + RightLen + 4 then -- ensure enough space
+    if ScreenHeight < 3 or ScreenWidth/2 < math.max(LeftLen, RightLen) + 2 then -- ensure enough space
         return false, 1
     end
     local Selected = 1
