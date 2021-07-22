@@ -198,28 +198,22 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     return true, Selected
 end
 
-OpenTUI.ParamList = function (ParamTable,ReadOnly)
-    local ConfigFile = io.open("../OpenPager/.Config") 
-    ConfigSettings = serialization.unserialize(ConfigFile:read())
-    ConfigFile:close()
-    io.stderr:write("====================\n")
-    print("All Config Settings currently present in the file will now be listed. If you have recently upgraded the program, please delete the config file to regenerate by entering [deleteconfig] (The program will reinitialise next launch). Save and Exit by typing [exit]. Modify a value by entering the setting name, and afterwards the new value (Ensure you do not enter the two simultaneously). The new value can only be of the same variable type as the previous value.")        
-    io.stderr:write("====================\n")
-    for key, value in pairs(ConfigSettings) do
-        print(tostring(key) .. " : " .. tostring(value))
+OpenTUI.ParamList = function (ParamTable,KeyColour,ReadOnly)
+    checkArg(1,ParamList, "table")
+    KeyColour = KeyColour or 0xffffff
+    checkArg(2,KeyColour, "number")
+    ReadOnly = ReadOnly or false
+    checkArg(3,ReadOnly, "boolean")
+    for key, value in pairs(ParamTable) do
+        OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
+        term.write(value .. "\n")
     end
-    io.stderr:write("====================\n")
-    local LoopVar = true
+    local LoopVar = not(ReadOnly)
     while LoopVar do
         local userResponse = io.read()
-        if string.lower(userResponse) == "exit" then
-            print("Saving and Exiting")
-            fs.remove("../OpenPager/.Config")
-            local ConfigFile = io.open("../OpenPager/.Config", "w")
-            ConfigFile:write(serialization.serialize(ConfigSettings))
-            ConfigFile:close()
+        if string.lower(userResponse) == "confirm" then
             LoopVar = false
-        elseif string.lower(userResponse) == "deleteconfig" then
+        elseif string.lower(userResponse) == "reset" then
             fs.remove("../OpenPager/.Config")
             print("Deleted")
             LoopVar = false
