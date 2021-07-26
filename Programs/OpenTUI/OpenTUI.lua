@@ -79,16 +79,6 @@ end
 
 local OpenTUI = {}
 
-OpenTUI.RepeatString = function (stringVar,stringLength)
-    checkArg(1, stringVar, "string")
-    checkArg(2, stringLength, "number")
-    local finalString = ""
-    for LoopCount=1,stringLength,1 do 
-        finalString = finalString .. stringVar
-    end
-    return finalString
-end
-
 OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
     checkArg(1, Text, "string")
     local ScreenWidth, ScreenHeight = term.getViewport()
@@ -227,26 +217,29 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
     ReadOnly = ReadOnly or false
     checkArg(4,ReadOnly, "boolean")
     local ScreenWidth, ScreenHeight = term.getViewport()
-    local LineClearString = OpenTUI.RepeatString("═",ScreenWidth)
+    local LineClearString = string.rep("═",ScreenWidth)
     local KeyHistoryTable = {}
     local LoopIndex = 1
+    local LX,LY = term.getCursor()
     for key, value in pairs(ParamTable) do
         KeyHistoryTable[LoopIndex] = key
         LoopIndex = LoopIndex + 1
+        term.clearLine()
         OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
         if EditTable[key] then
-            OpenTUI.ColourText(tostring(value .. "\n"),KeyColour)
+            OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),KeyColour)
         else
             term.write(value .. "\n")
         end
     end
     term.write(LineClearString)
     local CX,CY = term.getCursor()
+    CY = CY + 1
     local UserLoop = not(ReadOnly)
     local FunctionLoop = not(ReadOnly)
     local SetDefault = false
     while FunctionLoop do    
-        local UserOutcome = "exit"
+        local UserOutcome = "continue"
         while UserLoop do
             term.setCursor(1,CY)
             term.clearLine()
@@ -256,10 +249,7 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
             term.setCursor(1,CY+1)
             term.clearLine()
             term.write("Input: ")
-            -- clear subsequent lines for the reset after command
-            -- print how the user specifies commands over parameters
-            -- print a spare line for error messages, like invalid parameter or command
-            local userResponse = term.read{history=KeyHistoryTable,hint=KeyHistoryTable}
+            local userResponse = string.sub(term.read{history=KeyHistoryTable,hint=KeyHistoryTable},1,-2)
             if keyboard.isControlDown() then
                 if string.lower(userResponse) == "save" then
                     UserLoop = false
@@ -292,12 +282,14 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
                     term.clear()
                     goto helpEnd
                 else
-                    term.write("/n")
+                    term.write("\n")
+                    term.clearLine()
                     io.stderr:write("Invalid Command")
+                    event.pull(2,"key_down")
                 end
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
-                local userResponse2 = term.read{history=VarSet[userResponse]} 
+                local userResponse2 = string.sub(term.read{history=VarSet[userResponse]},1,-2)
                 local inVarSet = false 
                 if type(VarSet[userResponse]) == "table" then
                     for key,value in pairs(VarSet[userResponse]) do
@@ -309,21 +301,24 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
                 end
                 if type(userResponse2) == type(ParamTable[userResponse]) or inVarSet then
                     EditTable[userResponse] = userResponse2
-                    term.clear()
+                    term.clearLine()
                     term.write("Confirmed")
-                    event.pull(2,"key_up")
+                    event.pull(2,"key_down")
+                    UserLoop = false
                 else
-                    term.clear()
+                    term.clearLine()
                     io.stderr:write("Invalid Value")
                 end
             else
+                term.write("\n")
+                term.clearLine()
                 io.stderr:write("Invalid Key")
             end
         end
         if UserOutcome == "save" then
-            ImposeTable(ParamTable)
+            ImposeTable(ParamTable,EditTable)
         elseif UserOutcome == "exit" then
-            ImposeTable(ParamTable)
+            ImposeTable(ParamTable,EditTable)
             FunctionLoop = false
         elseif UserOutcome == "default" then
             FunctionLoop = false
@@ -333,11 +328,15 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
         elseif UserOutcome == "discard" then
             EditTable = {}
             FunctionLoop = false
+        else
+            UserLoop = true
         end
+        term.setCursor(LX,LY)
         for key, value in pairs(ParamTable) do
+            term.clearLine()
             OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
             if EditTable[key] then
-                OpenTUI.ColourText(tostring(value .. "\n"),KeyColour)
+                OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),KeyColour)
             else
                 term.write(value .. "\n")
             end
