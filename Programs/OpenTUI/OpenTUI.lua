@@ -299,7 +299,7 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
                 local userResponse2 = term.read{history=VarSet[userResponse]} 
                 local inVarSet = false 
-                if type(VarSet[userResponse]) = "table" then
+                if type(VarSet[userResponse]) == "table" then
                     for key,value in pairs(VarSet[userResponse]) do
                         if UserResponse2 == value then
                             inVarSet = true
