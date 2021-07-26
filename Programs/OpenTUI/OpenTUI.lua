@@ -235,6 +235,9 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
     term.write(LineClearString)
     local CX,CY = term.getCursor()
     CY = CY + 1
+    if ReadOnly then
+        return
+    end
     local UserLoop = not(ReadOnly)
     local FunctionLoop = not(ReadOnly)
     local SetDefault = false
@@ -243,17 +246,20 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
         while UserLoop do
             term.setCursor(1,CY)
             term.clearLine()
-            term.write("Type 'help' and press control + enter for more information.\n",true)
+            term.write("Type 'help' and press control + enter for more information.")
             term.setCursor(1,CY+2)
             term.clearLine()
             term.setCursor(1,CY+1)
             term.clearLine()
             term.write("Input: ")
-            local userResponse = string.sub(term.read{history=KeyHistoryTable,hint=KeyHistoryTable},1,-2)
+            local userResponse = string.sub(term.read(KeyHistoryTable,nil,KeyHistoryTable),1,-2)
             if keyboard.isControlDown() then
                 if string.lower(userResponse) == "save" then
                     UserLoop = false
                     UserOutcome = "save"
+                    term.setCursor(1,CY+3)
+                    term.clearLine()
+                    term.write("Saved")
                 elseif string.lower(userResponse) == "exit" then
                     UserLoop = false
                     UserOutcome = "exit"
@@ -263,47 +269,43 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
                 elseif string.lower(userResponse) == "reset" then
                     UserOutcome = "reset"
                     UserLoop = false
+                    term.setCursor(1,CY+3)
+                    term.clearLine()
+                    term.write("Reset")
                 elseif string.lower(userResponse) == "discard" then
                     UserOutcome = "discard"
                     UserLoop = false
                 elseif string.lower(userResponse) == "help" then
                     term.clear()
-                    --[[Type the case-sensitive name of the parameter (on the left) that you want to modify and confirm with enter."
-            "You will then be prompted to enter the new value of the parameter."
-            "Modified values will not be saved to the original table until the 'save' command is passed."
-            "To pass a command, type the command word and press control + enter."
-            "Other valid commands are: 'exit', which saves changes and exits the modification,"
-            "'discard', which exits without saving,"
-            "'reset', which discards changes without exiting,"
-            "and 'default', which exits without saving, and if supported, instructs the main program to reset the parameters to default."
-            "Press anything to exit help."
-            ]] -- do help
+                    term.write("Type the case-sensitive name of the parameter (on the left) that you want to modify and confirm with enter.\nYou will then be prompted to enter the new value of the parameter.\nModified values will not be saved to the original table until the 'save' command is passed.\nTo pass a command, type the command word and press control + enter.\nOther valid commands are: 'exit', which saves changes and exits the modification,\n'discard', which exits without saving,\n'reset', which discards changes without exiting,\nand 'default', which exits without saving, and if supported, instructs the main program to reset the parameters to default.\nPress anything to exit help.")
+                    term.setCursorBlink(false)
                     term.read()
+                    term.setCursorBlink(true)
                     term.clear()
                     goto helpEnd
                 else
                     term.write("\n")
                     term.clearLine()
                     io.stderr:write("Invalid Command")
-                    event.pull(2,"key_down")
                 end
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
-                local userResponse2 = string.sub(term.read{history=VarSet[userResponse]},1,-2)
+                local userResponse2 = string.sub(term.read(VarSet[userResponse],nil,VarSet[userResponse]),1,-2)
                 local inVarSet = false 
+                local VarSetOnly = false
                 if type(VarSet[userResponse]) == "table" then
+                    VarSetOnly = true
                     for key,value in pairs(VarSet[userResponse]) do
-                        if UserResponse2 == value then
+                        if userResponse2 == value then
                             inVarSet = true
                             break
                         end
                     end
                 end
-                if type(userResponse2) == type(ParamTable[userResponse]) or inVarSet then
+                if (type(userResponse2) == type(ParamTable[userResponse]) and not(VarSetOnly)) or inVarSet then
                     EditTable[userResponse] = userResponse2
                     term.clearLine()
                     term.write("Confirmed")
-                    event.pull(2,"key_down")
                     UserLoop = false
                 else
                     term.clearLine()
@@ -317,14 +319,18 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
         end
         if UserOutcome == "save" then
             ImposeTable(ParamTable,EditTable)
+            EditTable = {}
+            UserLoop = true
         elseif UserOutcome == "exit" then
             ImposeTable(ParamTable,EditTable)
+            EditTable = {}
             FunctionLoop = false
         elseif UserOutcome == "default" then
             FunctionLoop = false
             SetDefault = true
         elseif UserOutcome == "reset" then
             EditTable = {}
+            UserLoop = true
         elseif UserOutcome == "discard" then
             EditTable = {}
             FunctionLoop = false
@@ -343,6 +349,11 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
         end
         term.write(LineClearString)    
     end
+    term.setCursor(1,CY+3)
+    term.clearLine()
+    term.setCursor(1,CY+2)
+    term.clearLine()
+    return ParamTable,SetDefault
 end
 
 return OpenTUI
