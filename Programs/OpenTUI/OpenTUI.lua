@@ -290,7 +290,11 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
                 end
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
-                local userResponse2 = string.sub(term.read(VarSet[userResponse],nil,VarSet[userResponse]),1,-2)
+                local AutoFillTable = {}
+                for k,v in pairs(VarSet[userResponse]) do
+                    AutoFillTable[k] = v
+                end
+                local userResponse2 = string.sub(term.read(AutoFillTable,nil,VarSet[userResponse]),1,-2)
                 local inVarSet = false 
                 local VarSetOnly = false
                 if type(VarSet[userResponse]) == "table" then
@@ -338,7 +342,11 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
             UserLoop = true
         end
         term.setCursor(LX,LY)
+        local KeyHistoryTable = {}
+        local LoopIndex = 1    
         for key, value in pairs(ParamTable) do
+            KeyHistoryTable[LoopIndex] = key
+            LoopIndex = LoopIndex + 1    
             term.clearLine()
             OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
             if EditTable[key] then
