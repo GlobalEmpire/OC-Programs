@@ -69,8 +69,25 @@ local function ClearBox(LeftLen,RightLen,CursorY,ScreenWidth)
     return
 end
 
+local function ImposeTable(MainTable,ImposingTable)
+    for k,v in pairs(ImposingTable) do
+        MainTable[k] = v
+    end
+    return MainTable
+end
+
 
 local OpenTUI = {}
+
+OpenTUI.RepeatString = function (stringVar,stringLength)
+    checkArg(1, stringVar, "string")
+    checkArg(2, stringLength, "number")
+    local finalString = ""
+    for LoopCount=1,stringLength,1 do 
+        finalString = finalString .. stringVar
+    end
+    return finalString
+end
 
 OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
     checkArg(1, Text, "string")
@@ -198,41 +215,134 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     return true, Selected
 end
 
-OpenTUI.ParamList = function (ParamTable,KeyColour,ReadOnly)
-    checkArg(1,ParamTable, "table") -- Copy the table into a new one for discarding
+OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
+    local EditTable = {}
+    ::helpEnd::
+    term.clear()
+    checkArg(1,ParamTable, "table")
     KeyColour = KeyColour or 0xe6db74
     checkArg(2,KeyColour, "number")
+    VarSet = VarSet or {}
+    checkArg(3,VarSet,"table")
     ReadOnly = ReadOnly or false
-    checkArg(3,ReadOnly, "boolean")
+    checkArg(4,ReadOnly, "boolean")
+    local ScreenWidth, ScreenHeight = term.getViewport()
+    local LineClearString = OpenTUI.RepeatString("═",ScreenWidth)
+    local KeyHistoryTable = {}
+    local LoopIndex = 1
     for key, value in pairs(ParamTable) do
+        KeyHistoryTable[LoopIndex] = key
+        LoopIndex = LoopIndex + 1
         OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
-        term.write(value .. "\n")
-    end
-    local LoopVar = not(ReadOnly)
-    local UserReset = false
-    while LoopVar do
-        local userResponse = io.read()
-        if string.lower(userResponse) == "confirm" then
-            LoopVar = false
-        elseif string.lower(userResponse) == "reset" then
-            UserReset = true
-            LoopVar = false
-        elseif string.lower(userResponse) == "discard" then
-            LoopVar = false
-            "[[discard]]"
-        elseif ParamTable[userResponse] ~= nil then
-            local CX,CY = term.getCursor()
-            term.write("Modifying " .. tostring(userResponse) .. " : ")
-            local userResponse2 = io.read() -- maybe use term.read(), check documentation and how it could be useful. like removing the "cursor to new line when modified". Also, have the param list update when a change is made.
-            if type(userResponse2) == type(ConfigSettings[userResponse]) then
-                ConfigSettings[userResponse] = userResponse2
-                term.write("Confirmed")
-            else
-                print("Incorrect variable value type")
-            end
+        if EditTable[key] then
+            OpenTUI.ColourText(tostring(value .. "\n"),KeyColour)
         else
-            io.stderr:write("Unknown command/option")
+            term.write(value .. "\n")
         end
+    end
+    term.write(LineClearString)
+    local CX,CY = term.getCursor()
+    local UserLoop = not(ReadOnly)
+    local FunctionLoop = not(ReadOnly)
+    local SetDefault = false
+    while FunctionLoop do    
+        local UserOutcome = "exit"
+        while UserLoop do
+            term.setCursor(1,CY)
+            term.clearLine()
+            term.write("Type 'help' and press control + enter for more information.\n",true)
+            term.setCursor(1,CY+2)
+            term.clearLine()
+            term.setCursor(1,CY+1)
+            term.clearLine()
+            term.write("Input: ")
+            -- clear subsequent lines for the reset after command
+            -- print how the user specifies commands over parameters
+            -- print a spare line for error messages, like invalid parameter or command
+            local userResponse = term.read{history=KeyHistoryTable,hint=KeyHistoryTable}
+            if keyboard.isControlDown() then
+                if string.lower(userResponse) == "save" then
+                    UserLoop = false
+                    UserOutcome = "save"
+                elseif string.lower(userResponse) == "exit" then
+                    UserLoop = false
+                    UserOutcome = "exit"
+                elseif string.lower(userResponse) == "default" then
+                    UserLoop = false
+                    UserOutcome = "default"
+                elseif string.lower(userResponse) == "reset" then
+                    UserOutcome = "reset"
+                    UserLoop = false
+                elseif string.lower(userResponse) == "discard" then
+                    UserOutcome = "discard"
+                    UserLoop = false
+                elseif string.lower(userResponse) == "help" then
+                    term.clear()
+                    --[[Type the case-sensitive name of the parameter (on the left) that you want to modify and confirm with enter."
+            "You will then be prompted to enter the new value of the parameter."
+            "Modified values will not be saved to the original table until the 'save' command is passed."
+            "To pass a command, type the command word and press control + enter."
+            "Other valid commands are: 'exit', which saves changes and exits the modification,"
+            "'discard', which exits without saving,"
+            "'reset', which discards changes without exiting,"
+            "and 'default', which exits without saving, and if supported, instructs the main program to reset the parameters to default."
+            "Press anything to exit help."
+            ]] -- do help
+                    term.read()
+                    term.clear()
+                    goto helpEnd
+                else
+                    term.write("/n")
+                    io.stderr:write("Invalid Command")
+                end
+            elseif ParamTable[userResponse] ~= nil then
+                term.write("Modifying " .. tostring(userResponse) .. " : ")
+                local userResponse2 = term.read{history=VarSet[userResponse]} 
+                local inVarSet = false 
+                if type(VarSet[userResponse]) = "table" then
+                    for key,value in pairs(VarSet[userResponse]) do
+                        if UserResponse2 == value then
+                            inVarSet = true
+                            break
+                        end
+                    end
+                end
+                if type(userResponse2) == type(ParamTable[userResponse]) or inVarSet then
+                    EditTable[userResponse] = userResponse2
+                    term.clear()
+                    term.write("Confirmed")
+                    event.pull(2,"key_up")
+                else
+                    term.clear()
+                    io.stderr:write("Invalid Value")
+                end
+            else
+                io.stderr:write("Invalid Key")
+            end
+        end
+        if UserOutcome == "save" then
+            ImposeTable(ParamTable)
+        elseif UserOutcome == "exit" then
+            ImposeTable(ParamTable)
+            FunctionLoop = false
+        elseif UserOutcome == "default" then
+            FunctionLoop = false
+            SetDefault = true
+        elseif UserOutcome == "reset" then
+            EditTable = {}
+        elseif UserOutcome == "discard" then
+            EditTable = {}
+            FunctionLoop = false
+        end
+        for key, value in pairs(ParamTable) do
+            OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
+            if EditTable[key] then
+                OpenTUI.ColourText(tostring(value .. "\n"),KeyColour)
+            else
+                term.write(value .. "\n")
+            end
+        end
+        term.write(LineClearString)    
     end
 end
 
