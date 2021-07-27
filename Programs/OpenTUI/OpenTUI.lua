@@ -130,6 +130,7 @@ end
 
 --[[
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
+        The third positional variable 'ColourTable' is a table containing the names of the elements that can be coloured as keys and their colours as values in hexcodes. The elements that can be coloured are: LeftTextColour, RightTextColour, SelectionColour, AcceptedColour. SelectionColour is white by default, and determines the colour of the selection box. AcceptedColour is green by default, and determines what colour the selection box becomes once the user has confirmed their choice.
         The user can use the arrow keys to select and enter to confirm their choice. 
         The program will return two parameters:
             The first parameter determines whether or not there was enough space on the viewport to fully display the menu.
@@ -138,17 +139,21 @@ end
                 If Error: 1 for not enough space. More pending.
         If AllowAbbreviations is true, the user can press a letter key corresponding to the first letter in either option to select and confirm it instantly. The feature is forcefully set to false if both strings start with the same character 
         ]]
-OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColour,SelectionColour,AllowAbbreviations) 
+OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviations)
     checkArg(1, LeftText,"string","number")
     checkArg(2, RightText,"string","number")
-    LeftTextColour = LeftTextColour or 0xffffff
-    checkArg(3, LeftTextColour, "number")
-    RightTextColour = RightTextColour or 0xffffff
-    checkArg(4, RightTextColour, "number")
-    SelectionColour = SelectionColour or 0xffffff
-    checkArg(5, SelectionColour, "number")
+    ColourTable = ColourTable or []
+    checkArg(3, ColourTable, "table")
+    ColourTable.LeftTextColour = ColourTable.LeftTextColour or 0xffffff
+    checkArg(3.1, ColourTable.LeftTextColour, "number")
+    ColourTable.RightTextColour = ColourTable.RightTextColour or 0xffffff
+    checkArg(3.2, ColourTable.RightTextColour, "number")
+    ColourTable.SelectionColour = ColourTable.SelectionColour or 0xffffff
+    checkArg(3.3, ColourTable.SelectionColour, "number")
+    ColourTable.AcceptedColour = ColourTable.AcceptedColour or 0x00ff00
+    checkArg(3.4, ColourTable.AcceptedColour, "number")
     AllowAbbreviations = not(not((AllowAbbreviations or false) and not(string.lower(string.sub(LeftText,1,1)) == string.lower(string.sub(RightText,1,1))) and string.match(string.lower(string.sub(LeftText,1,1)),"%a") and string.match(string.lower(string.sub(RightText,1,1)),"%a")))
-    checkArg(6, AllowAbbreviations, "boolean")
+    checkArg(4, AllowAbbreviations, "boolean")
     local ScreenWidth, ScreenHeight = term.getViewport()
     local LeftLen = string.len(LeftText)
     local RightLen = string.len(RightText)
@@ -158,13 +163,13 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     local Selected = 1
     term.write("\n\n\n")
     local CX,CY = term.getCursor()
-    local OriginColour = gpu.setForeground(LeftTextColour) -- setup text and its colour
+    local OriginColour = gpu.setForeground(ColourTable.LeftTextColour) -- setup text and its colour
     term.setCursor(ScreenWidth/2-LeftLen-1,CY-1)
     term.write(LeftText)
-    gpu.setForeground(RightTextColour)
+    gpu.setForeground(ColourTable.RightTextColour)
     term.setCursor(ScreenWidth/2+1,CY-1)
     term.write(RightText)
-    gpu.setForeground(SelectionColour)
+    gpu.setForeground(ColourTable.SelectionColour)
     DrawBoxLeft(LeftLen,CY,ScreenWidth)
     local confirmation = true
     local AcceptedKeys = {} -- setup which key presses the program will care about
@@ -195,7 +200,7 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
         end
     end
     ClearBox(LeftLen,RightLen,CY,ScreenWidth)
-    gpu.setForeground(0x00ff00)
+    gpu.setForeground(ColourTable.AcceptedColour)
     if Selected == 1 then
         DrawBoxLeft(LeftLen,CY,ScreenWidth)
     else
@@ -205,13 +210,15 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,LeftTextColour,RightTextColo
     return true, Selected
 end
 
-OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
+OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourTable used keys: 'KeyColour': determines colour of keys and unsaved modified values.
     local EditTable = {}
     ::helpEnd::
     term.clear()
     checkArg(1,ParamTable, "table")
-    KeyColour = KeyColour or 0xe6db74
-    checkArg(2,KeyColour, "number")
+    ColourTable = ColourTable or {}    
+    checkArg(2,ColourTable, "table")
+    ColourTable.KeyColour = ColourTable.KeyColour or 0xe6db74
+    checkArg(2.1,ColourTable.KeyColour, "number")
     VarSet = VarSet or {}
     checkArg(3,VarSet,"table")
     ReadOnly = ReadOnly or false
@@ -225,9 +232,9 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
         KeyHistoryTable[LoopIndex] = key
         LoopIndex = LoopIndex + 1
         term.clearLine()
-        OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
+        OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.KeyColour)
         if EditTable[key] then
-            OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),KeyColour)
+            OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.KeyColour)
         else
             term.write(value .. "\n")
         end
@@ -348,9 +355,9 @@ OpenTUI.ParamList = function (ParamTable,KeyColour,VarSet,ReadOnly)
             KeyHistoryTable[LoopIndex] = key
             LoopIndex = LoopIndex + 1    
             term.clearLine()
-            OpenTUI.ColourText(tostring(key) .. " : ",KeyColour)
+            OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.KeyColour)
             if EditTable[key] then
-                OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),KeyColour)
+                OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.KeyColour)
             else
                 term.write(value .. "\n")
             end
