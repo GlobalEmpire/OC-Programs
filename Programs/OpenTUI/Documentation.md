@@ -10,8 +10,46 @@ The downside is that this library is limited in customisability: Aside from the 
 
 ## Installation
 
-Download a suitable version from the [official release](https://github.com/GlobalEmpire/OC-Programs/blob/master/Programs/OpenTUI/OpenTUI.lua) on github and drop it into any accepted package folder on a Lua Operating System (Like OpenOS). I recommend dropping in /lib. To actually implement it in a program, all that you need is to require the library, like this:
+Download a suitable version from the [official release](https://github.com/GlobalEmpire/OC-Programs/blob/master/Programs/OpenTUI/OpenTUI.lua) on github and drop it into any accepted package folder on a Lua Operating System (Like OpenOS). I recommend dropping in /lib. To actually implement it in a program, all you need to do is to require the library, like this:
 
 ```lua
 local OpenTUI = require("OpenTUI")
 ```
+
+Much like any other library, the functions are directly available under the main assigned variable:
+
+```lua
+local VarList, SetDefault = OpenTUI.ParamList(VarList,...)
+```
+
+## Using my code in your projects
+
+All I ask is that you credit me and my release on github, and that you contact me on discord (Tonatsi#8557) to tell me that you're using my program because I'll be really happy :D
+
+## Common Variables
+
+* ColourTable
+
+This table allows you to specify the colours of different elements in functions in which it is passed as an argument. Think of it like CSS, except the blocks are sorted by attribute instead of element. You only need to specify the colour of elements you want to be different from the default values.
+
+The name of the element in stored as the key and the colour is stored as the value, see the following example of a constructor for a valid table for the **BinaryChoice** function:
+
+```lua
+local ColourTable = {LeftTextColour=0xff0000,SelectionColour=0xe6db74}
+```
+As you can see, I only specified two of the four existing colour parameters. This means that these two will be changed, and the other two will stay default.
+I will make it so that keys are not reused between programs unless they are the same element type, so that you can reuse a single Colour Table and keep a style between multiple functions, while the functions ignore keys for elements they do not possess.
+
+## Functions
+
+* *OpenTUI.Version*
+
+This isn't actually a function, it's a number, and as such you don't call it, but check its value like any other variable. I would advise that any developer using this library check that the version number isn't inferior to the version they developed the program for. 
+
+My goal is that these programs never break their previous implementations between updates, and as such I guarantee backwards compatibility to the fullest extent I can. Anything coded for one version of the program will always work in future versions, and I will only increase the version number if I have added a new function or more. 
+
+Optimisations of functions will be re-implemented into previous versions under a new revision so that older versions still benefit. As such, if file space is a premium, you can get only the version that the program needs and nothing more, to cut down on space.
+
+Furthermore, I will list the names of all in-file functions that any given function calls on, so advanced users can make a custom library removing every function they don't need. I would still advise keeping the version check for the minimum full library.
+
+* *OpenTUI.PrintLogo
