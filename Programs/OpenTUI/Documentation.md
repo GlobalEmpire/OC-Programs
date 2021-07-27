@@ -52,4 +52,4 @@ Optimisations of functions will be re-implemented into previous versions under a
 
 Furthermore, I will list the names of all in-file functions that any given function calls on, so advanced users can make a custom library removing every function they don't need. I would still advise keeping the version check for the minimum full library.
 
-* *OpenTUI.PrintLogo
+* *OpenTUI.ColourText*
