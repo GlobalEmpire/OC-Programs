@@ -78,6 +78,7 @@ end
 
 
 local OpenTUI = {}
+OpenTUI.Version = 1.0 
 
 OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
     checkArg(1, Text, "string")
