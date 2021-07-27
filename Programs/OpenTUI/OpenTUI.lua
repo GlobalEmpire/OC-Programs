@@ -80,7 +80,18 @@ end
 local OpenTUI = {}
 OpenTUI.Version = 1.0 
 
-OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
+-- Writes the supplied string with the supplied colour. 
+OpenTUI.ColourText = function (String,Colour)
+    checkArg(1,String,"string")
+    checkArg(2,Colour,"number")
+    local OldColour, _ = gpu.setForeground(Colour)
+    term.write(String,true)
+    gpu.setForeground(OldColour)
+    return
+end
+
+
+OpenTUI.PrintLogo = function (Text,ColourTable) -- Requires OpenTUI.ColourText()
     checkArg(1, Text, "string")
     local ScreenWidth, ScreenHeight = term.getViewport()
     local TextOffset = string.len(Text)/2+1
@@ -104,30 +115,32 @@ OpenTUI.PrintLogo = function (Text,ScreenWidth,ScreenHeight)
         TextRows[1] = TextRows[1] .. "═"
     end
     TextRows[1] = TextRows[1] .. "╗"
-    TextRows[2]="║" .. Text .. "║"
+    TextRows[2]=" " .. Text .. " " -- "║"
     TextRows[3]="╚"
     for LoopCount=1,string.len(Text),1 do
         TextRows[3] = TextRows[3] .. "═"
     end
     TextRows[3] = TextRows[3] .. "╝"
+    local OriginColour = gpu.setForeground(ColourTable.MainAccent)
     for LoopCount=1,3,1 do 
         term.setCursor(StartPoint,CursorY+LoopCount-3)
-        term.write(TextRows[LoopCount])
+        if LoopCount == 2 then
+            OpenTUI.ColourText(TextRows[2],ColourTable.MainTextTheme)
+        else
+            term.write(TextRows[LoopCount])
+        end
     end
+    local CursorX, CursorY = term.getCursor()
+    term.setCursor(CursorX-1,CursorY-1)
+    term.write("║")
+    term.setCursor(CursorX-string.len(Text)-3,CursorY-1)
+    term.write("║")
+    term.setCursor(CursorX,CursorY)
     term.write("\n")
     return
 end
 
 
--- Writes the supplied string with the supplied colour. 
-OpenTUI.ColourText = function (String,Colour)
-    checkArg(1,String,"string")
-    checkArg(2,Colour,"number")
-    local OldColour, _ = gpu.setForeground(Colour)
-    term.write(String,true)
-    gpu.setForeground(OldColour)
-    return
-end
 
 --[[
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
