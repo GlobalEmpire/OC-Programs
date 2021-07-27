@@ -93,6 +93,11 @@ end
 
 OpenTUI.PrintLogo = function (Text,ColourTable) -- Requires OpenTUI.ColourText()
     checkArg(1, Text, "string")
+    checkArg(2, ColourTable, "table")
+    ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
+    checkArg(2.1, ColourTable.MainAccent, "number")
+    ColourTable.MainTextTheme = ColourTable.MainTextTheme or 0xffffff
+    checkArg(2.2, ColourTable.MainTextTheme, "number")
     local ScreenWidth, ScreenHeight = term.getViewport()
     local TextOffset = string.len(Text)/2+1
     local Middle = ScreenWidth/2
