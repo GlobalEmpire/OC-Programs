@@ -152,7 +152,7 @@ end
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
         The third positional variable 'ColourTable' is a table containing the names of the elements that can be coloured as keys and their colours as values in hexcodes. The elements that can be coloured are: LeftTextColour, RightTextColour, SelectionColour, AcceptedColour. SelectionColour is white by default, and determines the colour of the selection box. AcceptedColour is green by default, and determines what colour the selection box becomes once the user has confirmed their choice.
         The user can use the arrow keys to select and enter to confirm their choice. 
-        The program returns  up to two parameters:
+        The program returns up to two parameters:
             The first parameter determines whether or not there was enough space on the viewport to fully display the menu.
             The second return variable is only present if the first is true:
                 1 for the left option and 2 for the right option.
