@@ -151,12 +151,11 @@ end
         Given two strings, it will display them on screen on the left and right, and display a selector box around the left option. 
         The third positional variable 'ColourTable' is a table containing the names of the elements that can be coloured as keys and their colours as values in hexcodes. The elements that can be coloured are: LeftTextColour, RightTextColour, SelectionColour, AcceptedColour. SelectionColour is white by default, and determines the colour of the selection box. AcceptedColour is green by default, and determines what colour the selection box becomes once the user has confirmed their choice.
         The user can use the arrow keys to select and enter to confirm their choice. 
-        The program will return two parameters:
+        The program returns  up to two parameters:
             The first parameter determines whether or not there was enough space on the viewport to fully display the menu.
-            The second option returns either an error code or a selection:
-                If selection: 1 for the left option and 2 for the right option.
-                If Error: 1 for not enough space. More pending.
-        If AllowAbbreviations is true, the user can press a letter key corresponding to the first letter in either option to select and confirm it instantly. The feature is forcefully set to false if both strings start with the same character 
+            The second return variable is only present if the first is true:
+                1 for the left option and 2 for the right option.
+        If AllowAbbreviations is true, the user can press a letter key corresponding to the first letter in either option to select and confirm it instantly. The feature is forcefully set to false if both strings start with the same character or either is not a roman letter.
         ]]
 OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviations)
     checkArg(1, LeftText,"string","number")
@@ -167,10 +166,10 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviatio
     checkArg(3.1, ColourTable.LeftTextColour, "number")
     ColourTable.RightTextColour = ColourTable.RightTextColour or 0xffffff
     checkArg(3.2, ColourTable.RightTextColour, "number")
-    ColourTable.SelectionColour = ColourTable.SelectionColour or 0xffffff
-    checkArg(3.3, ColourTable.SelectionColour, "number")
-    ColourTable.AcceptedColour = ColourTable.AcceptedColour or 0x00ff00
-    checkArg(3.4, ColourTable.AcceptedColour, "number")
+    ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
+    checkArg(3.3, ColourTable.MainAccent, "number")
+    ColourTable.MainTextTheme = ColourTable.MainTextTheme or 0x00ff00
+    checkArg(3.4, ColourTable.MainTextTheme, "number")
     AllowAbbreviations = not(not((AllowAbbreviations or false) and not(string.lower(string.sub(LeftText,1,1)) == string.lower(string.sub(RightText,1,1))) and string.match(string.lower(string.sub(LeftText,1,1)),"%a") and string.match(string.lower(string.sub(RightText,1,1)),"%a")))
     checkArg(4, AllowAbbreviations, "boolean")
     local ScreenWidth, ScreenHeight = term.getViewport()
@@ -188,7 +187,7 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviatio
     gpu.setForeground(ColourTable.RightTextColour)
     term.setCursor(ScreenWidth/2+1,CY-1)
     term.write(RightText)
-    gpu.setForeground(ColourTable.SelectionColour)
+    gpu.setForeground(ColourTable.MainAccent)
     DrawBoxLeft(LeftLen,CY,ScreenWidth)
     local confirmation = true
     local AcceptedKeys = {} -- setup which key presses the program will care about
@@ -219,7 +218,7 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviatio
         end
     end
     ClearBox(LeftLen,RightLen,CY,ScreenWidth)
-    gpu.setForeground(ColourTable.AcceptedColour)
+    gpu.setForeground(ColourTable.MainTextTheme)
     if Selected == 1 then
         DrawBoxLeft(LeftLen,CY,ScreenWidth)
     else
@@ -229,15 +228,18 @@ OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviatio
     return true, Selected
 end
 
-OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourTable used keys: 'KeyColour': determines colour of keys and unsaved modified values.
+OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourTable used keys: 'MainTextTheme': determines colour of keys and unsaved modified values.
+    --Requires OpenTUI.ColourText()
     local EditTable = {}
     ::helpEnd::
     term.clear()
     checkArg(1,ParamTable, "table")
     ColourTable = ColourTable or {}    
     checkArg(2,ColourTable, "table")
-    ColourTable.KeyColour = ColourTable.KeyColour or 0xe6db74
-    checkArg(2.1,ColourTable.KeyColour, "number")
+    ColourTable.MainTextTheme = ColourTable.MainTextTheme or 0xe6db74
+    checkArg(2.1,ColourTable.MainTextTheme, "number")
+    ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
+    checkArg(2.2,ColourTable.MainAccent, "number")
     VarSet = VarSet or {}
     checkArg(3,VarSet,"table")
     ReadOnly = ReadOnly or false
@@ -251,14 +253,14 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
         KeyHistoryTable[LoopIndex] = key
         LoopIndex = LoopIndex + 1
         term.clearLine()
-        OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.KeyColour)
+        OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.MainTextTheme)
         if EditTable[key] then
-            OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.KeyColour)
+            OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.MainTextTheme)
         else
             term.write(value .. "\n")
         end
     end
-    term.write(LineClearString)
+    OpenTUI.ColourText(LineClearString,ColourTable.MainAccent)
     local CX,CY = term.getCursor()
     CY = CY + 1
     if ReadOnly then
@@ -374,9 +376,9 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             KeyHistoryTable[LoopIndex] = key
             LoopIndex = LoopIndex + 1    
             term.clearLine()
-            OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.KeyColour)
+            OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.MainTextTheme)
             if EditTable[key] then
-                OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.KeyColour)
+                OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.MainTextTheme)
             else
                 term.write(value .. "\n")
             end
