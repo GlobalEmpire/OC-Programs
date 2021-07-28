@@ -104,7 +104,7 @@ VarSet.config1={'One','Two','Three'}
 
 ## Support
 
-Contact me on discord directly (Tonatsi#8557) or through the [Yuonic Hub Discord](https://discord.gg/GXzamDsyZV).
+Contact me on discord directly (Tonatsi#8557) or through the [Yuonic Hub Discord](https://discord.gg/f7VYMfJ).
 
 ## Roadmap
 
