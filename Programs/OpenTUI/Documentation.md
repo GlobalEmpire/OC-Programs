@@ -62,7 +62,8 @@ Technical description: This function is a wrapper for `term.write()`, except it 
 
 This function writes to the center of the screen at the current Cursor Y value the provided string, surrounded in an ascii character box, if there is enough space. If not, it instead writes the String with fancy characters to the left and right. This only occurs if the screen is less than 3 character pixels tall.
 
-This function recognises **`MainAccent`** and **`MainTextTheme`** as keys for `ColourTable`, **`MainAccent`** affects the colour of the box around the string and **`MainTextTheme`** affects the colour of the string itself. Both are white if not supplied. **`MainAccent`** is ignored if the program writes the compact form.
+This function recognises **`MainAccent`** and **`MainTextTheme`** as keys for `ColourTable`, **`MainAccent`** affects the colour of the box around the string and **`MainTextTheme`** affects the colour of the string itself. Both are white if not supplied. 
+>**`MainAccent`** is ignored if the program writes the compact form.
 
 Returns `false` if there's insufficient space (both horizontally or vertically) to print either of the forms.
 
@@ -74,7 +75,8 @@ Returns `true, 2` if the compact form was written to the screen.
 
 This function, when provided two strings, displays both strings on the left and right side of the screen from the center. The user can use the arrow keys to select which option they want and then press enter to confirm. If `AllowAbbreviations` is true and both strings start with unique letters, then the user will be able to instantly select and confirm an option by pressing the letter that corresponds to the first letter of the string of the option they want.
 
-This function recognises **`LeftTextColour`**, **`RightTextColour`**, **`MainAccent`** and **`MainTextTheme`** as keys for `ColourTable`. **`LeftTextColour`** and **`RightTextColour`** determine the colour of their respective strings and are white by default, **`MainAccent`** determines the colour of the box that shows which option the user has selected and is white by default, and **`MainTextTheme`** determines the colour that the selection box becomes once the user has confirmed their selection and is green by default. The function **does not clear itself** after it ends, you must clear the 3 previous lines of the screen yourself if you want to remove it.
+This function recognises **`LeftTextColour`**, **`RightTextColour`**, **`MainAccent`** and **`MainTextTheme`** as keys for `ColourTable`. **`LeftTextColour`** and **`RightTextColour`** determine the colour of their respective strings and are white by default, **`MainAccent`** determines the colour of the box that shows which option the user has selected and is white by default, and **`MainTextTheme`** determines the colour that the selection box becomes once the user has confirmed their selection and is green by default. 
+>The function **does not clear itself** after it ends, you must clear the 3 previous lines of the screen yourself if you want to remove it.
 
 Returns `false` if there was insufficient space on the screen.
 
@@ -87,3 +89,13 @@ This function allows a simple way to let the user modify a table directly; for e
 `ParamTable`: This is the table that the program allows the user to edit. It displays this on screen, each key and its value one after the other. The table is directly modified, but is still returned by the function afterwards anyway.
 
 `ColourTable`: This program recognises **`MainTextTheme`** and **`MainAccent`** as keys, **`MainTextTheme`** determines the colour of the keys when displayed and unsaved modified values, and **`MainAccent`** determines the colour of the line that is printed to separate the user's workspace and the key-value pairs of the table.
+
+`VarSet`: This is a table that can optionally be provided. This allows you to restrict what the user can set as a variable for a given key, if a parameter can only accept a limited set of values. To use it, store an indexed table of the values you want to restrict the parameter to under the same key in `VarSet` as in `ParamTable`.
+
+>For example, if you wanted to limit the values of a parameter stored under the key `config1` in `ParamTable` to choose between 'One', 'Two' and 'Three' then you would do:
+```lua 
+VarSet.config1={'One','Two','Three'}
+```
+>Now, the program will not allow the user to change the value of config1 if it does not exactly match these three terms. It will only do this for specified keys, any keys not specified here will have no restrictions.
+
+`ReadOnly`: If `true`, the program will not allow the user to change any of the variables, and will instead immediately return once it has displayed the table. Useful for things like statistics readouts.
