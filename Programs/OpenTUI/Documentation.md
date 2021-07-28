@@ -42,9 +42,9 @@ I will make it so that keys are not reused between programs unless they are the 
 
 ## Functions
 
-* **OpenTUI.Version**
+* **OpenTUI.Version()**
 
-**This isn't actually a function, it's a number, and as such you don't call it, but check its value** like any other variable. I would advise that any developer using this library check that the version number isn't inferior to the version they developed the program for. 
+This function returns two numbers, the first is the version and the second is the revision. I would advise that any developer using this library check that the version number isn't inferior to the version they developed the program for. All revisions are cross-compatible, newer revisions will just be more optimised.
 
 My goal is that these programs never break their previous implementations between updates, and as such I guarantee backwards compatibility to the fullest extent I can. Anything coded for one version of the program will always work in future versions, and I will only increase the version number if I have added a new function or more. 
 
@@ -105,3 +105,15 @@ VarSet.config1={'One','Two','Three'}
 ## Support
 
 Contact me on discord directly (Tonatsi#8557) or through the [Yuonic Hub Discord](https://discord.gg/GXzamDsyZV).
+
+## Roadmap
+
+Right now, I'm thinking of a widget display system (that can display customisable things like a counter or a timer, or online/offline status or whatever is needed) and a progress bar. If you have suggestions for text-based UI, contact me and I'll see if it's something that would fit in this library. My biggest issue is getting ideas for stuff to do, so I'll be grateful if you can help!
+
+## Contributing
+
+If you want to add a feature and it follows the design principles of Ease of Implementation first, User Experience second, All Else third, and you think it's inline with the themes and parameters I have used in previous functions, contact me or open a pull request and I'll see if I can add it in directly, if it needs tweaking or if I feel that the function doesn't fit in this library.
+
+## Project Status and my schedule
+
+My schedule is when I'm motivated. Fixing bugs is something I'll likely start doing the second I notice them, but adding new features might happen in batches, far apart from each other.
