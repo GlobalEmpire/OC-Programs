@@ -42,14 +42,33 @@ I will make it so that keys are not reused between programs unless they are the 
 
 ## Functions
 
-* *OpenTUI.Version*
+* **OpenTUI.Version**
 
-This isn't actually a function, it's a number, and as such you don't call it, but check its value like any other variable. I would advise that any developer using this library check that the version number isn't inferior to the version they developed the program for. 
+**This isn't actually a function, it's a number, and as such you don't call it, but check its value** like any other variable. I would advise that any developer using this library check that the version number isn't inferior to the version they developed the program for. 
 
 My goal is that these programs never break their previous implementations between updates, and as such I guarantee backwards compatibility to the fullest extent I can. Anything coded for one version of the program will always work in future versions, and I will only increase the version number if I have added a new function or more. 
 
 Optimisations of functions will be re-implemented into previous versions under a new revision so that older versions still benefit. As such, if file space is a premium, you can get only the version that the program needs and nothing more, to cut down on space.
 
-Furthermore, I will list the names of all in-file functions that any given function calls on, so advanced users can make a custom library removing every function they don't need. I would still advise keeping the version check for the minimum full library.
+Furthermore, I will list the names of all in-file functions that any given function calls on, so advanced users can make a custom library removing every function they don't need. I would still advise keeping a version check for the minimum full library.
 
-* *OpenTUI.ColourText*
+* **OpenTUI.ColourText(String,Colour)** 
+
+This is the simplest function in the library. You provide a string and a colour hexcode and this program writes the string to the screen in that colour.
+
+Technical description: This function is a wrapper for `term.write()`, except it changes the GPU Foreground colour before executing `term.write()`, and then does it again once it has written the string to set the foreground colour back to the previous colour. Don't forget to properly put spaces in either this function's string or the surrounding strings if you're putting this after and/or before a `term.write()`! Also, wrap is set to true here in `term.write()`.
+
+* **OpenTUI.PrintLogo(String,ColourTable)** - *Requires OpenTUI.ColourText()*
+
+This function writes to the center of the screen at the current Cursor Y value the provided string, surrounded in an ascii character box, if there is enough space. If not, it instead writes the String with fancy characters to the left and right. This only occurs if the screen is less than 3 character pixels tall.
+
+This program recognises **`MainAccent`** and **`MainTextTheme`** as keys for `ColourTable`, **`MainAccent`** affects the colour of the box around the string and **`MainTextTheme`** affects the colour of the string itself. Both are white if not supplied. **`MainAccent`** is ignored if the program writes the compact form.
+
+Returns `false` if there's insufficient space (both horizontally or vertically) to print either of the forms.
+
+Returns `true, 1` if the full form was written to the screen.
+
+Returns `true, 2` if the compact form was written to the screen.
+
+* **OpenTUI.BinaryChoice(LeftText,RightText,ColourTable,AllowAbbreviations)**
+
