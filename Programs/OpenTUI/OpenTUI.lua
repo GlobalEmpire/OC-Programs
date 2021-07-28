@@ -91,38 +91,38 @@ OpenTUI.ColourText = function (String,Colour)
 end
 
 
-OpenTUI.PrintLogo = function (Text,ColourTable) -- Requires OpenTUI.ColourText()
-    checkArg(1, Text, "string")
+OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText()
+    checkArg(1, String, "string")
     checkArg(2, ColourTable, "table")
     ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
     checkArg(2.1, ColourTable.MainAccent, "number")
     ColourTable.MainTextTheme = ColourTable.MainTextTheme or 0xffffff
     checkArg(2.2, ColourTable.MainTextTheme, "number")
     local ScreenWidth, ScreenHeight = term.getViewport()
-    local TextOffset = string.len(Text)/2+1
+    local TextOffset = string.len(String)/2+1
     local Middle = ScreenWidth/2
     local StartPoint = Middle-TextOffset
-    if ScreenHeight < 3 or ScreenWidth < string.len(Text)+2 then
-        if ScreenWidth < string.len(Text)+6 then
-            return
+    if ScreenHeight < 3 or ScreenWidth < string.len(String)+2 then
+        if ScreenWidth < string.len(String)+6 then
+            return false
         end
         term.clearLine()
         local _, CursorY = term.getCursor()
         term.setCursor(StartPoint-2,CursorY)
-        term.write("╞╬╡" .. Text .. "╞╬╡")
-        return
+        OpenTUI.ColourText("╞╬╡" .. String .. "╞╬╡",ColourTable.MainTextTheme)
+        return true, 2
     end
     term.write("\n\n\n")
     local _, CursorY = term.getCursor()
     local TextRows = {}
     TextRows[1]="╔"
-    for LoopCount=1,string.len(Text),1 do
+    for LoopCount=1,string.len(String),1 do
         TextRows[1] = TextRows[1] .. "═"
     end
     TextRows[1] = TextRows[1] .. "╗"
-    TextRows[2]=" " .. Text .. " " -- "║"
+    TextRows[2]=" " .. String .. " " -- "║"
     TextRows[3]="╚"
-    for LoopCount=1,string.len(Text),1 do
+    for LoopCount=1,string.len(String),1 do
         TextRows[3] = TextRows[3] .. "═"
     end
     TextRows[3] = TextRows[3] .. "╝"
@@ -138,11 +138,11 @@ OpenTUI.PrintLogo = function (Text,ColourTable) -- Requires OpenTUI.ColourText()
     local CursorX, CursorY = term.getCursor()
     term.setCursor(CursorX-1,CursorY-1)
     term.write("║")
-    term.setCursor(CursorX-string.len(Text)-3,CursorY-1)
+    term.setCursor(CursorX-string.len(String)-3,CursorY-1)
     term.write("║")
     term.setCursor(CursorX,CursorY)
     term.write("\n")
-    return
+    return true, 1
 end
 
 
