@@ -99,3 +99,9 @@ VarSet.config1={'One','Two','Three'}
 >Now, the program will not allow the user to change the value of config1 if it does not exactly match these three terms. It will only do this for specified keys, any keys not specified here will have no restrictions.
 
 `ReadOnly`: If `true`, the program will not allow the user to change any of the variables, and will instead immediately return once it has displayed the table. Useful for things like statistics readouts.
+
+*For Users:* when using this function, type help and then press control+enter to see the help screen. You can use the arrow keys to select a parameter to modify from the main section, and if a parameter you are modifying has a restricted list of possible values, you can also use the arrow keys to autofill between them. This program also allows you to use tab to autocomplete an option if the arrow key functionality is present. 
+
+## Support
+
+Contact me on discord directly (Tonatsi#8557) or through the [Yuonic Hub Discord](https://discord.gg/GXzamDsyZV).
