@@ -1,12 +1,19 @@
+local term = require("term")
+term.clear()
+print("OpenFTP G1-a SERVER STARTING")
+print("Custom Path Server Modification")
+print("Please Enter Custom Path below, from root (such as '/home/') without string delimiters:")
+directoryPath = io.read()
+print("Confiming '"..directoryPath.."' as directory path.")
+print("CONTINUING STARTUP")
+
 local Compatibility = "1.0"
 local event = require("event")
 local component = require("component")
-local term = require("term")
 local m = component.modem
 local GERTi = require("GERTiClient")
-m.open(98)
-term.clear()
-print("OpenFTP G1-a SERVER STARTING")
+local fs = require("filesystem")
+local srl = require("serialization")
 local fileReceive = {}
 local fileSend = {}
 local messageBuffer1 = {}
@@ -17,24 +24,25 @@ local P = {}
 local socket = {}
 
 local function Register(_, Address, CID)
+	CID = tonumber(CID)
 	if CID == 98 then 
+		event.push("T0")
 		socket[Address] = GERTi.openSocket(Address, true, 98)
+		event.push("T1",socket[Address])
+		event.push("T2",Address)
 	end
 end
-event.listen("GERTConnectionID", Register)
 
 local function CloseSocket(_, Address, _, CID)
+	CID = tonumber(CID)
 	if CID == 98 then
 		socket[Address]:close()
 	end
 end
-event.listen("GERTConnectionClose", CloseSocket)
-print("Custom Path Server Modification")
-print("Please Enter Custom Path below, from root (such as '/home/') without string delimiters:")
-print()
-directoryPath = io.read()
-print("Confiming '"..directoryPath.."' as directory path.")
 
+local function ends_with(str, ending)
+	return ending == "" or str:sub(-#ending) == ending
+ end
 
 local function Receive(Address, Type, Content, Spare)
 	if Type == "S.FileStart" then 
@@ -55,8 +63,13 @@ local function Receive(Address, Type, Content, Spare)
 		fileReceive[Address]:close()
 	elseif Type == "R.FileStart" then 
 		local SenderAddress = Address
-		fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
-		socket[SenderAddress]:write("R.Ready")
+		if ends_with(Content, "/") or Content == "" then
+			local newtable = {} for value in fs.list(Content) do table.insert(newtable, value) end
+			socket[SenderAddress]:write(srl.serialize(newtable))
+		else
+			fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
+			socket[SenderAddress]:write("R.Ready")
+		end
 	elseif Type == "R.FileCont" then
 		local SenderAddress = Address
 		P[SenderAddress] = fileSend[SenderAddress]:read(4096)
@@ -76,6 +89,7 @@ local function Receive(Address, Type, Content, Spare)
 end
 
 local function DataGroup(_, Address, CID, data)
+	CID = tonumber(CID)
 	if CID == -1 then
 		if data == "GetVersion" then
 			GERTi.send(Address, Compatibility)
@@ -90,11 +104,14 @@ local function DataGroup(_, Address, CID, data)
 		end
 	end
 end
+
 event.listen("GERTData", DataGroup)
+event.listen("GERTConnectionID", Register)
+event.listen("GERTConnectionClose", CloseSocket)
 
 print("Server Initialised")
 while true do
 local usrstate = io.read()
-if usrstate == "hide" or "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
+if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
 
 end
