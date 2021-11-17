@@ -1,6 +1,8 @@
 local term = require("term")
 local shell = require("shell")
 local args, opts = shell.parse(...)
+directoryPath = "/srv/"
+
 if not opts.h then
 	term.clear()
 	print("OpenFTP G1-a SERVER STARTING")
@@ -9,8 +11,8 @@ if not opts.h then
 	directoryPath = io.read()
 	print("Confiming '"..directoryPath.."' as directory path.")
 	print("CONTINUING STARTUP")
-	directoryPath = "/srv"
 end
+
 local Compatibility = "1.0"
 local event = require("event")
 local component = require("component")
