@@ -4,6 +4,8 @@ local component = require("component")
 local term = require("term")
 local m = component.modem
 local GERTi = require("GERTiClient")
+local fs = require("filesystem")
+local srl = require("serialization")
 m.open(98)
 term.clear()
 print("OpenFTP G1-a SERVER STARTING")
@@ -35,6 +37,9 @@ print()
 directoryPath = io.read()
 print("Confiming '"..directoryPath.."' as directory path.")
 
+local function ends_with(str, ending)
+	return ending == "" or str:sub(-#ending) == ending
+ end
 
 local function Receive(Address, Type, Content, Spare)
 	if Type == "S.FileStart" then 
@@ -55,8 +60,13 @@ local function Receive(Address, Type, Content, Spare)
 		fileReceive[Address]:close()
 	elseif Type == "R.FileStart" then 
 		local SenderAddress = Address
-		fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
-		socket[SenderAddress]:write("R.Ready")
+		if ends_with(Content, "/") then
+			local newtable = {} for value in fs.list(Content) do table.insert(newtable, value) end
+			socket[SenderAddress]:write(srl.serialize(newtable))
+		else
+			fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
+			socket[SenderAddress]:write("R.Ready")
+		end
 	elseif Type == "R.FileCont" then
 		local SenderAddress = Address
 		P[SenderAddress] = fileSend[SenderAddress]:read(4096)

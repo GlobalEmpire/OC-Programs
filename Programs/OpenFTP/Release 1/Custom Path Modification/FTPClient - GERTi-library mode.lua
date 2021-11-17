@@ -17,6 +17,11 @@ local function batchSocket3(var1, var2, var3, socket)
 	os.sleep(0.1)
 end
 
+local function ends_with(str, ending)
+	return ending == "" or str:sub(-#ending) == ending
+ end
+
+
 exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file function; (Absolute path of file, Name to save file under)
 	assert(type(Path) == "string", "File Path must be the absolute path of the file to send given as a string")
 	assert(type(name) == "string" or type(name) == "number", "The name that the file will be stored under partially must be either a string or a number")
@@ -69,8 +74,10 @@ end
 exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 	assert(type(FileIdName)=="string", "The identifier for the file must be a string; usually in the format <name.number>.")
 	assert(type(FTPaddress)== "number")
-	if ResultPath == nil then file = io.open(tostring("/home/" .. FileIdName), "w")
-	else file = io.open(tostring(ResultPath), "w") end
+	if not(ends_with(FileIdName,"/")) then
+		if ResultPath == nil then file = io.open(tostring("/home/" .. FileIdName), "w")
+		else file = io.open(tostring(ResultPath), "w") end
+	end
 	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
 	os.sleep(1)
 	batchSocket3("R.FileStart", FileIdName, GERTi.getAddress(), FTPsocket)
@@ -100,7 +107,7 @@ exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 		file:close()
 		FTPsocket:close()
 		return true
-	else FTPsocket:close() file:close() return false, "FTP Error - Incorrect State Response"  end
+	else FTPsocket:close() file:close() return false, "FTP Error - Incorrect State Response", State[1]  end
 end
 
 return exportFunctions
