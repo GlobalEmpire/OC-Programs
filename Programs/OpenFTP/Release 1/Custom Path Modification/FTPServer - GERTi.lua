@@ -1,11 +1,12 @@
 local term = require("term")
 term.clear()
-print("OpenFTP G1-a SERVER STARTING")
+--[[print("OpenFTP G1-a SERVER STARTING")
 print("Custom Path Server Modification")
 print("Please Enter Custom Path below, from root (such as '/home/') without string delimiters:")
 directoryPath = io.read()
 print("Confiming '"..directoryPath.."' as directory path.")
-print("CONTINUING STARTUP")
+print("CONTINUING STARTUP")]]--
+directoryPath = "/srv"
 
 local Compatibility = "1.0"
 local event = require("event")
@@ -64,7 +65,7 @@ local function Receive(Address, Type, Content, Spare)
 	elseif Type == "R.FileStart" then 
 		local SenderAddress = Address
 		if ends_with(Content, "/") or Content == "" then
-			local newtable = {} for value in fs.list(Content) do table.insert(newtable, value) end
+			local newtable = {} for value in fs.list(directoryPath .. Content) do table.insert(newtable, value) end
 			socket[SenderAddress]:write(srl.serialize(newtable))
 		else
 			fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
@@ -109,9 +110,9 @@ event.listen("GERTData", DataGroup)
 event.listen("GERTConnectionID", Register)
 event.listen("GERTConnectionClose", CloseSocket)
 
-print("Server Initialised")
+--[[print("Server Initialised")
 while true do
 local usrstate = io.read()
 if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
 
-end
+end]]
