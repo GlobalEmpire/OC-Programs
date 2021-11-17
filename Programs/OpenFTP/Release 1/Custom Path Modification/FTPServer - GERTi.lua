@@ -60,7 +60,7 @@ local function Receive(Address, Type, Content, Spare)
 		fileReceive[Address]:close()
 	elseif Type == "R.FileStart" then 
 		local SenderAddress = Address
-		if ends_with(Content, "/") then
+		if ends_with(Content, "/") or Content == "" then
 			local newtable = {} for value in fs.list(Content) do table.insert(newtable, value) end
 			socket[SenderAddress]:write(srl.serialize(newtable))
 		else

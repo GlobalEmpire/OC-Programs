@@ -72,6 +72,9 @@ end
 	
 
 exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
+	if FileIdName == nil then
+		FileIdName = ""
+	end
 	assert(type(FileIdName)=="string", "The identifier for the file must be a string; usually in the format <name.number>.")
 	assert(type(FTPaddress)== "number")
 	if not(ends_with(FileIdName,"/")) then
