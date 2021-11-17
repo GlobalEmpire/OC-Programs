@@ -4,7 +4,6 @@ local event = require("event")
 local term = require("term")
 local m = component.modem
 local GERTi = require("GERTiClient")
-term.clear()
 
 local exportFunctions = {}
 
@@ -76,10 +75,11 @@ exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 		FileIdName = ""
 	end
 	assert(type(FileIdName)=="string", "The identifier for the file must be a string; usually in the format <name.number>.")
-	assert(type(FTPaddress)== "number")
-	if not(ends_with(FileIdName,"/")) then
-		if ResultPath == nil then file = io.open(tostring("/home/" .. FileIdName), "w")
-		else file = io.open(tostring(ResultPath), "w") end
+	assert(type(FTPaddress)== "number" or type(FTPaddress) == "string")
+	if ResultPath == nil then 
+		file = io.open(tostring("/home/" .. FileIdName), "w")
+	else 
+		file = io.open(tostring(ResultPath), "w") 
 	end
 	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
 	os.sleep(1)
@@ -110,7 +110,7 @@ exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 		file:close()
 		FTPsocket:close()
 		return true
-	else FTPsocket:close() file:close() return false, "FTP Error - Incorrect State Response", State[1]  end
+	else if FTPsocket then FTPsocket:close() end if file then file:close() end return false, "FTP Error - Incorrect State Response", State[1]  end
 end
 
 return exportFunctions
