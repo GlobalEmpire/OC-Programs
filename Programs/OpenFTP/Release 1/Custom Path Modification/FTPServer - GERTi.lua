@@ -1,13 +1,16 @@
 local term = require("term")
-term.clear()
---[[print("OpenFTP G1-a SERVER STARTING")
-print("Custom Path Server Modification")
-print("Please Enter Custom Path below, from root (such as '/home/') without string delimiters:")
-directoryPath = io.read()
-print("Confiming '"..directoryPath.."' as directory path.")
-print("CONTINUING STARTUP")]]--
-directoryPath = "/srv"
-
+local shell = require("shell")
+local args, opts = shell.parse(...)
+if not opts.h then
+	term.clear()
+	print("OpenFTP G1-a SERVER STARTING")
+	print("Custom Path Server Modification")
+	print("Please Enter Custom Path below, from root (such as '/home/') without string delimiters:")
+	directoryPath = io.read()
+	print("Confiming '"..directoryPath.."' as directory path.")
+	print("CONTINUING STARTUP")
+	directoryPath = "/srv"
+end
 local Compatibility = "1.0"
 local event = require("event")
 local component = require("component")
@@ -23,6 +26,7 @@ local messageBuffer3 = {}
 local path = {}
 local P = {}
 local socket = {}
+
 
 local function Register(_, Address, CID)
 	CID = tonumber(CID)
@@ -110,9 +114,10 @@ event.listen("GERTData", DataGroup)
 event.listen("GERTConnectionID", Register)
 event.listen("GERTConnectionClose", CloseSocket)
 
---[[print("Server Initialised")
-while true do
-local usrstate = io.read()
-if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
+if not opts.h then
+	while true do
+	local usrstate = io.read()
+	if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
 
-end]]
+	end
+end
