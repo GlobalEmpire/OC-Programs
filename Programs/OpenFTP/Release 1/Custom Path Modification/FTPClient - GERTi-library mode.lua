@@ -20,6 +20,7 @@ end
 exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file function; (Absolute path of file, Name to save file under)
 	assert(type(Path) == "string", "File Path must be the absolute path of the file to send given as a string")
 	assert(type(name) == "string" or type(name) == "number", "The name that the file will be stored under partially must be either a string or a number")
+	assert(type(FTPaddress)== "number")
 	FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
 	os.sleep(1) -- Wait a bit
 	FTPsocket:write("S.FileStart") -- Write state
@@ -67,6 +68,7 @@ end
 
 exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 	assert(type(FileIdName)=="string", "The identifier for the file must be a string; usually in the format <name.number>.")
+	assert(type(FTPaddress)== "number")
 	if ResultPath == nil then file = io.open(tostring("/home/" .. FileIdName), "w")
 	else file = io.open(tostring(ResultPath), "w") end
 	local FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
