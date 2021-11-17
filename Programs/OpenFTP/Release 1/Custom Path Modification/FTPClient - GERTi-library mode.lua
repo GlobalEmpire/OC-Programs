@@ -34,7 +34,7 @@ exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file functio
 	FTPsocket:write(GERTi.getAddress()) -- write address (unused; vestigial code)
 	::pull1::
 	local _, _, Pid = event.pull("GERTData") -- Wait for response
-	if Pid ~= 98 then goto pull1 end	
+	if tonumber(Pid) ~= 98 then goto pull1 end	
 	local state = FTPsocket:read() -- state
 	if state[1] == "StartConfirm" then -- Confirm server has correctly initialised the transfer
 		local file = io.open(Path) -- Open File
@@ -44,7 +44,7 @@ exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file functio
 		FTPsocket:write(GERTi.getAddress())	-- write address (unused vestigial code)
 		::pull2::
 		local _, _, Pid = event.pull("GERTData")
-		if Pid ~= 98 then goto pull2 end
+		if tonumber(Pid) ~= 98 then goto pull2 end
 		local state = FTPsocket:read() -- state
 		while string.len(P) == 4096 do -- send file until no file left to send
 			P = file:read(4096)
@@ -53,7 +53,7 @@ exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file functio
 			FTPsocket:write(GERTi.getAddress())
 			::pull3::
 			local _, _, Pid = event.pull("GERTData")
-			if Pid ~= 98 then goto pull3 end
+			if tonumber(Pid) ~= 98 then goto pull3 end
 		end
 		FTPsocket:write("S.FileFin") -- Write state
 		FTPsocket:write(0) -- legacy
@@ -86,13 +86,13 @@ exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 	batchSocket3("R.FileStart", FileIdName, GERTi.getAddress(), FTPsocket)
 	::pull4::
 	local _, _, Pid = event.pull("GERTData")
-	if Pid ~= 98 then goto pull4 end
+	if tonumber(Pid) ~= 98 then goto pull4 end
 	local State = FTPsocket:read()
 	if State[1] == "R.Ready" then
 		batchSocket3("R.FileCont", 0, GERTi.getAddress(), FTPsocket)
 		::pull5::
 		local _, _, Pid = event.pull("GERTData")
-		if Pid ~= 98 then goto pull5 end
+		if tonumber(Pid) ~= 98 then goto pull5 end
 		os.sleep(0.8)
 		local data = FTPsocket:read()
 		local State = data[1]
@@ -101,7 +101,7 @@ exportFunctions.FTPCReceive = function (FileIdName, ResultPath,FTPaddress)
 			file:write(FTP)
 			::pull6::
 			local _, _, Pid = event.pull("GERTData")
-			if Pid ~= 98 then goto pull6 end
+			if tonumber(Pid) ~= 98 then goto pull6 end
 			os.sleep(0.2)
 			data = FTPsocket:read()
 			State = data[1]
