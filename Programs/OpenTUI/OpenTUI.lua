@@ -145,6 +145,7 @@ OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText
     term.write("║")
     term.setCursor(CursorX,CursorY)
     term.write("\n")
+    gpu.setForeground(OriginColour)
     return true, 1
 end
 
