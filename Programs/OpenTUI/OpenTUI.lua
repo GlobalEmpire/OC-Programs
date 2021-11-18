@@ -244,6 +244,8 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
     checkArg(2.1,ColourTable.MainTextTheme, "number")
     ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
     checkArg(2.2,ColourTable.MainAccent, "number")
+    ColourTable.SecondaryTextTheme = ColourTable.SecondaryTextTheme or 0xffffff
+    checkArg(2.3,ColourTable.SecondaryTextTheme, "number")
     VarSet = VarSet or {}
     checkArg(3,VarSet,"table")
     ReadOnly = ReadOnly or false
@@ -257,7 +259,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
         if EditTable[key] then
             OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.MainTextTheme)
         else
-            term.write(value .. "\n")
+            OpenTUI.ColourText(value .. "\n", ColourTable.SecondaryTextTheme)
         end
     end
     OpenTUI.ColourText(LineClearString,ColourTable.MainAccent)
@@ -274,7 +276,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
         while UserLoop do
             term.setCursor(1,CY)
             term.clearLine()
-            term.write("Type 'help' and press control + enter for more information.")
+            OpenTUI.ColourText("Type 'help' and press control + enter for more information.",ColourTable.SecondaryTextTheme)
             term.setCursor(1,CY+2)
             term.clearLine()
             term.setCursor(1,CY+1)
@@ -284,7 +286,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             for key, value in pairs(ParamTable) do
                 KeyHistoryTable[LoopIndex] = key
             end
-            term.write("Input: ")
+            OpenTUI.ColourText("Input: ",ColourTable.SecondaryTextTheme)
             local userResponse = string.sub(term.read(KeyHistoryTable,nil,KeyHistoryTable),1,-2)
             if keyboard.isControlDown() then
                 if string.lower(userResponse) == "save" then
@@ -292,7 +294,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                     UserOutcome = "save"
                     term.setCursor(1,CY+3)
                     term.clearLine()
-                    term.write("Saved")
+                    OpenTUI.ColourText("Saved",ColourTable.SecondaryTextTheme)
                 elseif string.lower(userResponse) == "exit" then
                     UserLoop = false
                     UserOutcome = "exit"
@@ -304,13 +306,13 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                     UserLoop = false
                     term.setCursor(1,CY+3)
                     term.clearLine()
-                    term.write("Reset")
+                    OpenTUI.ColourText("Reset",ColourTable.SecondaryTextTheme)
                 elseif string.lower(userResponse) == "discard" then
                     UserOutcome = "discard"
                     UserLoop = false
                 elseif string.lower(userResponse) == "help" then
                     term.clear()
-                    term.write("Type the case-sensitive name of the parameter (on the left) that you want to modify and confirm with enter.\nYou will then be prompted to enter the new value of the parameter.\nModified values will not be saved to the original table until the 'save' command is passed.\nTo pass a command, type the command word and press control + enter.\nOther valid commands are: 'exit', which saves changes and exits the modification,\n'discard', which exits without saving,\n'reset', which discards changes without exiting,\nand 'default', which exits without saving, and if supported, instructs the main program to reset the parameters to default.\nPress anything to exit help.")
+                    OpenTUI.ColourText("Type the case-sensitive name of the parameter (on the left) that you want to modify and confirm with enter.\nYou will then be prompted to enter the new value of the parameter.\nModified values will not be saved to the original table until the 'save' command is passed.\nTo pass a command, type the command word and press control + enter.\nOther valid commands are: 'exit', which saves changes and exits the modification,\n'discard', which exits without saving,\n'reset', which discards changes without exiting,\nand 'default', which exits without saving, and if supported, instructs the main program to reset the parameters to default.\nPress anything to exit help.",ColourTable.SecondaryTextTheme)
                     term.setCursorBlink(false)
                     term.read()
                     term.setCursorBlink(true)
@@ -322,7 +324,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                     OpenTUI.ColourText("Invalid Command",0xff0000)
                 end
             elseif ParamTable[userResponse] ~= nil then
-                term.write("Modifying " .. tostring(userResponse) .. " : ")
+                OpenTUI.ColourText("Modifying " .. tostring(userResponse) .. " : ",ColourTable.SecondaryTextTheme)
                 local AutoFillTable = {}
                 if type(VarSet[userResponse]) == "table" then
                     for k,v in pairs(VarSet[userResponse]) do
@@ -344,7 +346,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                 if (type(userResponse2) == type(ParamTable[userResponse]) and not(VarSetOnly)) or inVarSet then
                     EditTable[userResponse] = userResponse2
                     term.clearLine()
-                    term.write("Confirmed")
+                    OpenTUI.ColourText("Confirmed",ColourTable.SecondaryTextTheme)
                     UserLoop = false
                 else
                     term.clearLine()
@@ -387,7 +389,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             if EditTable[key] then
                 OpenTUI.ColourText(tostring(EditTable[key] .. "\n"),ColourTable.MainTextTheme)
             else
-                term.write(value .. "\n")
+                OpenTUI.ColourText(value .. "\n",ColourText.SecondaryTextTheme)
             end
         end
         term.write(LineClearString)    
