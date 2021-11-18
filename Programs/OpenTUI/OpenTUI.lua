@@ -249,12 +249,8 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
     checkArg(4,ReadOnly, "boolean")
     local ScreenWidth, ScreenHeight = term.getViewport()
     local LineClearString = string.rep("═",ScreenWidth)
-    local KeyHistoryTable = {}
-    local LoopIndex = 1
     local LX,LY = term.getCursor()
     for key, value in pairs(ParamTable) do
-        KeyHistoryTable[LoopIndex] = key
-        LoopIndex = LoopIndex + 1
         term.clearLine()
         OpenTUI.ColourText(tostring(key) .. " : ",ColourTable.MainTextTheme)
         if EditTable[key] then
@@ -282,6 +278,11 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             term.clearLine()
             term.setCursor(1,CY+1)
             term.clearLine()
+            KeyHistoryTable = {}
+            local LoopIndex = 1
+            for key, value in pairs(ParamTable) do
+                KeyHistoryTable[LoopIndex] = key
+            end
             term.write("Input: ")
             local userResponse = string.sub(term.read(KeyHistoryTable,nil,KeyHistoryTable),1,-2)
             if keyboard.isControlDown() then
