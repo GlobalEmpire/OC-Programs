@@ -322,8 +322,10 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
                 local AutoFillTable = {}
-                for k,v in pairs(VarSet[userResponse]) do
-                    AutoFillTable[k] = v
+                if type(VarSet[userResponse]) == "table" then
+                    for k,v in pairs(VarSet[userResponse]) do
+                        AutoFillTable[k] = v
+                    end
                 end
                 local userResponse2 = string.sub(term.read(AutoFillTable,nil,VarSet[userResponse]),1,-2)
                 local inVarSet = false 
