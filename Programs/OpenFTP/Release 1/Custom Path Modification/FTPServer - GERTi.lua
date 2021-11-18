@@ -33,10 +33,7 @@ local socket = {}
 local function Register(_, Address, CID)
 	CID = tonumber(CID)
 	if CID == 98 then 
-		event.push("T0")
 		socket[Address] = GERTi.openSocket(Address, true, 98)
-		event.push("T1",socket[Address])
-		event.push("T2",Address)
 	end
 end
 
