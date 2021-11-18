@@ -79,7 +79,8 @@ end
 
 local OpenTUI = {}
 OpenTUI.Version = function ()
-    return 1.0, 1 
+    return 1.0, 1
+end
 
 -- Writes the supplied string with the supplied colour. 
 OpenTUI.ColourText = function (String,Colour)
