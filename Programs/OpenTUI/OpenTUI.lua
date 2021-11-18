@@ -95,6 +95,7 @@ end
 
 OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText()
     checkArg(1, String, "string")
+    ColourTable = ColourTable or {}
     checkArg(2, ColourTable, "table")
     ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
     checkArg(2.1, ColourTable.MainAccent, "number")
@@ -140,7 +141,7 @@ OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText
     local CursorX, CursorY = term.getCursor()
     term.setCursor(CursorX-1,CursorY-1)
     term.write("║")
-    term.setCursor(CursorX-string.len(String)-3,CursorY-1)
+    term.setCursor(CursorX-string.len(String)-2,CursorY-1)
     term.write("║")
     term.setCursor(CursorX,CursorY)
     term.write("\n")
@@ -162,7 +163,7 @@ end
 OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviations)
     checkArg(1, LeftText,"string","number")
     checkArg(2, RightText,"string","number")
-    ColourTable = ColourTable or []
+    ColourTable = ColourTable or {}
     checkArg(3, ColourTable, "table")
     ColourTable.LeftTextColour = ColourTable.LeftTextColour or 0xffffff
     checkArg(3.1, ColourTable.LeftTextColour, "number")
