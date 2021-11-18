@@ -117,9 +117,9 @@ event.listen("GERTConnectionID", Register)
 event.listen("GERTConnectionClose", CloseSocket)
 
 if not opts.h then
+	print("STARTUP COMPLETE")
 	while true do
-	local usrstate = io.read()
-	if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
-
+		local usrstate = io.read()
+		if usrstate == "hide" or usrstate == "Hide" then os.exit() elseif usrstate == "ADDRESS" then print(GERTi.getAddress()) end
 	end
 end
