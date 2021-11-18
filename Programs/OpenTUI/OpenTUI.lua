@@ -317,7 +317,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                 else
                     term.write("\n")
                     term.clearLine()
-                    io.stderr:write("Invalid Command")
+                    OpenTUI.ColourText("Invalid Command",0xff0000)
                 end
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
@@ -346,12 +346,12 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                     UserLoop = false
                 else
                     term.clearLine()
-                    io.stderr:write("Invalid Value")
+                    OpenTUI.ColourText("Invalid Value",0xff0000)
                 end
             else
                 term.write("\n")
                 term.clearLine()
-                io.stderr:write("Invalid Key")
+                OpenTUI.ColourText("Invalid Key"),0xff0000
             end
         end
         if UserOutcome == "save" then
