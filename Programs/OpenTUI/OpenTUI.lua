@@ -351,7 +351,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             else
                 term.write("\n")
                 term.clearLine()
-                OpenTUI.ColourText("Invalid Key"),0xff0000
+                OpenTUI.ColourText("Invalid Key",0xff0000)
             end
         end
         if UserOutcome == "save" then
