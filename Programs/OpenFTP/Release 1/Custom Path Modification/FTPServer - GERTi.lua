@@ -51,8 +51,7 @@ local function ends_with(str, ending)
 local function Receive(Address, Type, Content, Spare)
 	if Type == "S.FileStart" then 
 		local ReceiverAddress = Address
-		filename = math.random(1000000, 9999999)
-		path[ReceiverAddress] = tostring(filename .. "." .. Content)
+		path[ReceiverAddress] = tostring(Content)
 		fileReceive[ReceiverAddress] = io.open(tostring(directoryPath .. path[ReceiverAddress]), "w")
 		socket[ReceiverAddress]:write("StartConfirm")
 	elseif Type == "S.FileContinue" then
@@ -69,24 +68,31 @@ local function Receive(Address, Type, Content, Spare)
 		local SenderAddress = Address
 		if ends_with(Content, "/") or Content == "" then
 			local newtable = {} for value in fs.list(directoryPath .. Content) do table.insert(newtable, value) end
+			os.sleep(0.2)
 			socket[SenderAddress]:write(srl.serialize(newtable))
 		else
 			fileSend[SenderAddress] = io.open(tostring(directoryPath .. Content))
+			os.sleep(0.2)
 			socket[SenderAddress]:write("R.Ready")
 		end
 	elseif Type == "R.FileCont" then
 		local SenderAddress = Address
 		P[SenderAddress] = fileSend[SenderAddress]:read(4096)
+		os.sleep(0.2)
 		socket[SenderAddress]:write("R.FTPCont")
+		os.sleep(0.2)
 		socket[SenderAddress]:write(P[SenderAddress])
 		os.sleep(1)
 		while string.len(P[SenderAddress]) == 4096 do
 			P[SenderAddress] = fileSend[SenderAddress]:read(4096)
+			os.sleep(0.2)
 			socket[SenderAddress]:write("R.FTPCont")
+			os.sleep(0.2)
 			socket[SenderAddress]:write(P[SenderAddress])
 			os.sleep(1)
 		end
 		socket[SenderAddress]:write("R.Fin")
+		os.sleep(0.2)
 		socket[SenderAddress]:write(0)
 		fileSend[SenderAddress]:close()
 	end
