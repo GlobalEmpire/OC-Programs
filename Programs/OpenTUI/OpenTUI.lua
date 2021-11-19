@@ -285,6 +285,7 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
             local LoopIndex = 1
             for key, value in pairs(ParamTable) do
                 KeyHistoryTable[LoopIndex] = key
+                LoopIndex = LoopIndex + 1
             end
             OpenTUI.ColourText("Input: ",ColourTable.SecondaryTextTheme)
             local userResponse = string.sub(term.read(KeyHistoryTable,nil,KeyHistoryTable),1,-2)
