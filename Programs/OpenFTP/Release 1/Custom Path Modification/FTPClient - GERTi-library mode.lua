@@ -26,12 +26,7 @@ exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file functio
 	assert(type(name) == "string" or type(name) == "number", "The name that the file will be stored under partially must be either a string or a number")
 	assert(type(FTPaddress)== "number")
 	FTPsocket = GERTi.openSocket(FTPaddress, true, 98) -- Create communication socket with the FTP server
-	os.sleep(1) -- Wait a bit
-	FTPsocket:write("S.FileStart") -- Write state
-	os.sleep(0.1)
-	FTPsocket:write(name) -- write new file name
-	os.sleep(0.1)
-	FTPsocket:write(GERTi.getAddress()) -- write address (unused; vestigial code)
+	batchSocket3("S.FileStart",name,GERTi.getAddress(),FTPsocket) -- write address (unused; vestigial code)
 	::pull1::
 	local _, _, Pid = event.pull("GERTData") -- Wait for response
 	if tonumber(Pid) ~= 98 then goto pull1 end	
@@ -39,25 +34,19 @@ exportFunctions.FTPCSend = function (Path, name,FTPaddress) -- Send file functio
 	if state[1] == "StartConfirm" then -- Confirm server has correctly initialised the transfer
 		local file = io.open(Path) -- Open File
 		local P = file:read(4096) -- Read file
-		FTPsocket:write("S.FileContinue") -- Write state
-		FTPsocket:write(P) -- write data
-		FTPsocket:write(GERTi.getAddress())	-- write address (unused vestigial code)
+		batchSocket3("S.FileContinue",P,GERTi.getAddress(),FTPsocket)	-- write address (unused vestigial code)
 		::pull2::
 		local _, _, Pid = event.pull("GERTData")
 		if tonumber(Pid) ~= 98 then goto pull2 end
 		local state = FTPsocket:read() -- state
 		while string.len(P) == 4096 do -- send file until no file left to send
 			P = file:read(4096)
-			FTPsocket:write("S.FileContinue")
-			FTPsocket:write(P)
-			FTPsocket:write(GERTi.getAddress())
+			batchSocket3("S.FileContinue",P,GERTi.getAddress(),FTPsocket)
 			::pull3::
 			local _, _, Pid = event.pull("GERTData")
 			if tonumber(Pid) ~= 98 then goto pull3 end
 		end
-		FTPsocket:write("S.FileFin") -- Write state
-		FTPsocket:write(0) -- legacy
-		FTPsocket:write(GERTi.getAddress()) -- Write address (unused; kept for potential compatibility)
+		batchSocket3("S.FileFin",0,GERTi.getAddress(),FTPsocket) -- Write address (unused; kept for potential compatibility)
 		file:close() -- stop reading file
 		local _, _, _, _, _ = event.pull("GERTData")
 		FTPsocket:close() -- close socket

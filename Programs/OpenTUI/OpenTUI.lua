@@ -79,7 +79,8 @@ end
 
 local OpenTUI = {}
 OpenTUI.Version = function ()
-    return 1.0, 1 
+    return 1.0, 1
+end
 
 -- Writes the supplied string with the supplied colour. 
 OpenTUI.ColourText = function (String,Colour)
@@ -94,6 +95,7 @@ end
 
 OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText()
     checkArg(1, String, "string")
+    ColourTable = ColourTable or {}
     checkArg(2, ColourTable, "table")
     ColourTable.MainAccent = ColourTable.MainAccent or 0xffffff
     checkArg(2.1, ColourTable.MainAccent, "number")
@@ -139,7 +141,7 @@ OpenTUI.PrintLogo = function (String,ColourTable) -- Requires OpenTUI.ColourText
     local CursorX, CursorY = term.getCursor()
     term.setCursor(CursorX-1,CursorY-1)
     term.write("║")
-    term.setCursor(CursorX-string.len(String)-3,CursorY-1)
+    term.setCursor(CursorX-string.len(String)-2,CursorY-1)
     term.write("║")
     term.setCursor(CursorX,CursorY)
     term.write("\n")
@@ -161,7 +163,7 @@ end
 OpenTUI.BinaryChoice = function (LeftText,RightText,ColourTable,AllowAbbreviations)
     checkArg(1, LeftText,"string","number")
     checkArg(2, RightText,"string","number")
-    ColourTable = ColourTable or []
+    ColourTable = ColourTable or {}
     checkArg(3, ColourTable, "table")
     ColourTable.LeftTextColour = ColourTable.LeftTextColour or 0xffffff
     checkArg(3.1, ColourTable.LeftTextColour, "number")
@@ -315,13 +317,15 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                 else
                     term.write("\n")
                     term.clearLine()
-                    io.stderr:write("Invalid Command")
+                    OpenTUI.ColourText("Invalid Command",0xff0000)
                 end
             elseif ParamTable[userResponse] ~= nil then
                 term.write("Modifying " .. tostring(userResponse) .. " : ")
                 local AutoFillTable = {}
-                for k,v in pairs(VarSet[userResponse]) do
-                    AutoFillTable[k] = v
+                if type(VarSet[userResponse]) == "table" then
+                    for k,v in pairs(VarSet[userResponse]) do
+                        AutoFillTable[k] = v
+                    end
                 end
                 local userResponse2 = string.sub(term.read(AutoFillTable,nil,VarSet[userResponse]),1,-2)
                 local inVarSet = false 
@@ -342,12 +346,12 @@ OpenTUI.ParamList = function (ParamTable,ColourTable,VarSet,ReadOnly) -- ColourT
                     UserLoop = false
                 else
                     term.clearLine()
-                    io.stderr:write("Invalid Value")
+                    OpenTUI.ColourText("Invalid Value",0xff0000)
                 end
             else
                 term.write("\n")
                 term.clearLine()
-                io.stderr:write("Invalid Key")
+                OpenTUI.ColourText("Invalid Key",0xff0000)
             end
         end
         if UserOutcome == "save" then
