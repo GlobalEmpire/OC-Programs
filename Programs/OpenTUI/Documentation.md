@@ -88,7 +88,7 @@ This function allows a simple way to let the user modify a table directly; for e
 
 `ParamTable`: This is the table that the program allows the user to edit. It displays this on screen, each key and its value one after the other. The table is directly modified, but is still returned by the function afterwards anyway.
 
-`ColourTable`: This program recognises **`MainTextTheme`** and **`MainAccent`** as keys, **`MainTextTheme`** determines the colour of the keys when displayed and unsaved modified values, and **`MainAccent`** determines the colour of the line that is printed to separate the user's workspace and the key-value pairs of the table.
+`ColourTable`: This program recognises **`MainTextTheme`**, **`MainAccent`** and **`SecondaryTextTheme`** as keys. **`MainTextTheme`** determines the colour of the keys when displayed and unsaved modified values, **`MainAccent`** determines the colour of the line that is printed to separate the user's workspace and the key-value pairs of the table, and **`SecondaryTextTheme`** determines the colour of all remaining printed text, such as unmodified values and the user instructions (`Input: ` and the like).
 
 `VarSet`: This is a table that can optionally be provided. This allows you to restrict what the user can set as a variable for a given key, if a parameter can only accept a limited set of values. To use it, store an indexed table of the values you want to restrict the parameter to under the same key in `VarSet` as in `ParamTable`.
 
