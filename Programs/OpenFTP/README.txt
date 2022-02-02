@@ -2,9 +2,16 @@
 #OpenFTP Instructions#
 ######################
 
+####
+WARNING! The available versions are currently unsupported, and are basically my prototypes.
+I currently have a newer version in the works but the released versions are likely to break on many setups.
+I apologise for the inconvenience.
+####
+
+
 Thank you for choosing OpenFTP: Coded by Tonatsi (Also known as Leothehero)
 
-To use the program (Release 1); you will need 1 server and 1 client.
+To use the program (Beta 1); you will need 1 server and 1 client.
 There are two types available, one that utilises the GERT Networking Protocol; and one that utilises network cards in OpenComputers.
 
 ###########
