@@ -51,12 +51,24 @@ local loop = true
 while loop do
     local response = io.read()
     if response == "SEND" then
+        io.write("Enter destination of file on server: /home/OpenFTP/")
+        FileDetails.destination = io.read()
+        io.write("Enter local file path (Where it is): ")
+        FileDetails.file = io.read()
+        local FileData = fs.size(FileDetails.file)
+        local success, result = FTPCore.DownloadFile(FileDetails,FileData,result)
+        if success then
+            io.write("File Successfully Sent, return code ".. tostring(result))
+        else
+            io.stderr:write("Error in download, Error Code " .. tostring(result))
+        end
 
     elseif response == "RECEIVE" then
         io.write("Enter path of file on server: /home/OpenFTP/")
         FileDetails.file = io.read()
         io.write("Enter local file destination (Where it will be downloaded to): ")
         FileDetails.destination = io.read()
+
     elseif response == "DELETE" then
 
     elseif response == "EXIT" then
