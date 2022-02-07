@@ -33,12 +33,8 @@ local function CloseSocket(_, originAddress,destAddress)
 end
 
 local function GERTDataHandler(_,originAddress,connectionID,data)
-    print(1)
-    print(not(not(fileSockets[originAddress])))
-    print(connectionID == customPort)
-    if fileSockets[originAddress] and connectionID == customPort then
-        print(2)
-        local information = fileSockets[originAddress]:read("-k")
+    if fileSockets[originAddress] ~= nil and connectionID == customPort then
+        local information = fileSockets[originAddress]:read("-k")[1]
         if type(information) == "table" then
             if information[1] == "FTPREADYTORECEIVE" then -- have it update the LIST file when done
                 local FileDetails = {
@@ -51,11 +47,6 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
                 local FileDetails = SRL.unserialize(information[2])
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
-                if result then
-                    io.write(tostring(result) .. " " .. tostring(lastState) .. "\n")
-                else
-                    io.stderr:write(tostring(lastState) .. "\n")
-                end
             end
         end
     end
