@@ -71,8 +71,6 @@ end
 
 
 
-
-
 -- IO starts here
 io.write("OpenFTP LITE started.") 
 local address = PERMANENTADDRESS
@@ -120,14 +118,25 @@ while loop do
     elseif response == "RECEIVE" then
         io.write("Enter path of file on server: /home/OpenFTP/")
         FileDetails.file = io.read()
-        io.write("Enter local file destination (Where it will be downloaded to): ")
-        FileDetails.destination = io.read()
-        local FileData = 1
-        local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
-        if success or result == 0 then
-            io.write("File successfully downloaded, return code ".. tostring(result) .. "\n")
+        if fs.name(FileDetails.file) == "list" then
+            FileDetails.destination = "/tmp/list"
+            local FileData = 1
+            local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
+            if success or result == 0 then
+                os.execute("edit /tmp/list")
+            else
+                io.stderr:write("Could not retrieve list file\n")
+            end
         else
-            io.stderr:write("Error in download, error code " .. tostring(result) .. "\n")
+            io.write("Enter local file destination (Where it will be downloaded to): ")
+            FileDetails.destination = io.read()
+            local FileData = 1
+            local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
+            if success or result == 0 then
+                io.write("File successfully downloaded, return code ".. tostring(result) .. "\n")
+            else
+                io.stderr:write("Error in download, error code " .. tostring(result) .. "\n")
+            end
         end
     elseif response == "DELETE" then
         io.write("Please enter the file or directory you wish to delete:\n/home/OpenFTP/")
