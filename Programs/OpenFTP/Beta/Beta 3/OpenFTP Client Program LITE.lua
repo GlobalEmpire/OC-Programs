@@ -3,8 +3,33 @@
 local fs = require("filesystem")
 local GERTi = require("GERTiClient")
 local event = require("event")
+local SRL = require("serialization")
 
 local FTPCore = require("FTPCore")
+
+--Error Codes
+local INVALIDARGUMENT = 0
+local NOSOCKET = -1
+local TIMEOUT = -2
+local NOSPACE = -3
+local INTERRUPTED = -4
+local NOLOCALFILE = -5
+local UNKNOWN = -6
+local SERVERRESPONSEFALSE = -7
+local NOREMOTEFILE = -8
+local CANNOTCHANGE = -9
+local UPTODATE = -10
+local NOREMOTERESPONSE = -11
+local STUCK = -12
+
+--Op Codes
+local ALLGOOD = 0
+local DOWNLOADED = 1
+local ALREADYINSTALLED = 10
+
+
+
+
 
 local SocketWithTimeout = function (Details,Timeout) -- Timeout defaults to 5 seconds. Details must be a keyed array with the address under "address" and the port/CID under "port"
     local socket = GERTi.openSocket(Details.address,Details.port)
@@ -12,16 +37,35 @@ local SocketWithTimeout = function (Details,Timeout) -- Timeout defaults to 5 se
     if socket then serverPresence = event.pullFiltered(Timeout or 5,function (eventName,oAdd,CID) return eventName=="GERTConnectionID" and oAdd==Details.address and CID==Details.port end) end
     if not serverPresence then
         socket:close()
-        return false, -1
+        return false, NOSOCKET
     end
     return true, socket
 end
 
-local function sendFile(fileName,destination,address,port,socket)
-    
-    local result, code = FTPCore.UploadFile(FileDetails,true,socket)
+local ProbeForSend = function (FileDetails, StepComplete, socket)
+    if not StepComplete then
+        return false, socket
+    end
+    local fileData = {}
+    fileData.insert(FileDetails.file)
+    fileData.insert(fs.size(FileDetails.file))
+    socket:write("FTPSENDPROBE",SRL.serialize(FileDetails),SRL.serialize(fileData))
+    local success = event.pullFiltered(5, function (eventName, iAdd, dAdd, CID) if (iAdd == FileDetails.address or dAdd == FileDetails.address) and (dAdd == FileDetails.port or CID == FileDetails.port) then if eventName == "GERTConnectionClose" or eventName == "GERTData" then return true end end return false end)
+    if success == "GERTConnectionClose" then
+        return false, INTERRUPTED
+    elseif not success then
+        return false, TIMEOUT
+    end
+    while #socket:read("-k") == 0 do
+        os.sleep() -- \\\\This might need a lengthening to 0.1, if OC is weird.\\\\
+    end
+    local returnData = socket:read()
+    if returnData[1] == "FTPREADYTORECEIVE" then
+        return true, returnData
+    else
+        return false, returnData
+    end
 end
-
 
 
 
@@ -41,7 +85,7 @@ local FileDetails = {
     address = address,
     port = 98
 }
-local success, result = SocketWithTimeout(FileDetails)
+local success, socket = SocketWithTimeout(FileDetails)
 if not success then
     io.stderr:write("Server Unreachable.")
     os.exit()
@@ -55,19 +99,26 @@ while loop do
         FileDetails.destination = io.read()
         io.write("Enter local file path (Where it is): ")
         FileDetails.file = io.read()
-        local FileData = fs.size(FileDetails.file)
-        local success, result = FTPCore.DownloadFile(FileDetails,FileData,result)
+
+
+        local success, result = FTPCore.UploadFile(FileDetails,true,socket)
         if success then
             io.write("File Successfully Sent, return code ".. tostring(result))
         else
-            io.stderr:write("Error in download, Error Code " .. tostring(result))
+            io.stderr:write("Error in upload, Error Code " .. tostring(result))
         end
-
     elseif response == "RECEIVE" then
         io.write("Enter path of file on server: /home/OpenFTP/")
         FileDetails.file = io.read()
         io.write("Enter local file destination (Where it will be downloaded to): ")
         FileDetails.destination = io.read()
+        local FileData = fs.size(FileDetails.file)
+        local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
+        if success then
+            io.write("File Successfully Downloaded, return code ".. tostring(result))
+        else
+            io.stderr:write("Error in download, Error Code " .. tostring(result))
+        end
 
     elseif response == "DELETE" then
 
