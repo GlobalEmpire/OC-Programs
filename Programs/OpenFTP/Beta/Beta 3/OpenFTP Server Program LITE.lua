@@ -15,7 +15,7 @@ local fileSockets = {}
 
 local function CompleteSocket(_,originAddress,connectionID)
     if connectionID == customPort then
-        os.sleep(0.5)
+        os.sleep()
         fileSockets[originAddress] = GERTi.openSocket(originAddress,connectionID)
     end
     return true
