@@ -75,12 +75,13 @@ end
 
 io.write("OpenFTP LITE started. Enter the server's address or EXIT: ")
 local address
-while type(address) ~= "number" and address ~= "EXIT" do
+while type(tonumber(address)) ~= "number" and address ~= "EXIT" do
     address = io.read()
 end
 if address == "EXIT" then
     os.exit()
 end
+address = tonumber(address)
 local FileDetails = {
     address = address,
     port = 98
@@ -90,7 +91,7 @@ if not success then
     io.stderr:write("Server Unreachable.")
     os.exit()
 end
-io.write("Successfully Established Socket.\nSelect your mode:\nSEND RECEIVE DELETE EXIT")
+io.write("Successfully Established Socket.\nSelect your mode:\nSEND RECEIVE DELETE EXIT\n")
 local loop = true
 while loop do
     local response = io.read()
@@ -99,13 +100,16 @@ while loop do
         FileDetails.destination = io.read()
         io.write("Enter local file path (Where it is): ")
         FileDetails.file = io.read()
-
-
-        local success, result = FTPCore.UploadFile(FileDetails,true,socket)
-        if success then
-            io.write("File Successfully Sent, return code ".. tostring(result))
+        local success, result = ProbeForSend(FileDetails,true,socket)
+        if not success then
+            io.stderr:write("The server did not respond correctly, error code: " .. tostring(result))
         else
-            io.stderr:write("Error in upload, Error Code " .. tostring(result))
+            local success, result = FTPCore.UploadFile(FileDetails,true,socket)
+            if success then
+                io.write("File Successfully Sent, return code ".. tostring(result))
+            else
+                io.stderr:write("Error in upload, Error Code " .. tostring(result))
+            end
         end
     elseif response == "RECEIVE" then
         io.write("Enter path of file on server: /home/OpenFTP/")
@@ -124,6 +128,7 @@ while loop do
 
     elseif response == "EXIT" then
         loop = false
+        socket:close()
     else
         io.stderr:write("INVALID COMMAND")
     end
