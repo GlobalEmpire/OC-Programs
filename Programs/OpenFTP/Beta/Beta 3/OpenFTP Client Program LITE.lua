@@ -47,8 +47,8 @@ local ProbeForSend = function (FileDetails, StepComplete, socket)
         return false, socket
     end
     local fileData = {}
-    fileData.insert(FileDetails.file)
-    fileData.insert(fs.size(FileDetails.file))
+    table.insert(fileData,FileDetails.file)
+    table.insert(fileData,fs.size(FileDetails.file))
     socket:write("FTPSENDPROBE",SRL.serialize(FileDetails),SRL.serialize(fileData))
     local success = event.pullFiltered(5, function (eventName, iAdd, dAdd, CID) if (iAdd == FileDetails.address or dAdd == FileDetails.address) and (dAdd == FileDetails.port or CID == FileDetails.port) then if eventName == "GERTConnectionClose" or eventName == "GERTData" then return true end end return false end)
     if success == "GERTConnectionClose" then
