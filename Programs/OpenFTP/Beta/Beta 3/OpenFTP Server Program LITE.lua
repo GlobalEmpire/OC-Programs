@@ -36,7 +36,7 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
     if fileSockets[originAddress] and connectionID == customPort then
         local information = fileSockets[originAddress]:read("-k")
         if type(information) == "table" then
-            if information[1] == "FTPREADYTORECEIVE" then
+            if information[1] == "FTPREADYTORECEIVE" then -- have it update the LIST file when done
                 local FileDetails = {
                     file = customPath .. fs.canonical(information[2]),
                     address = originAddress,
