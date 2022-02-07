@@ -102,13 +102,13 @@ while loop do
         FileDetails.file = io.read()
         local success, result = ProbeForSend(FileDetails,true,socket)
         if not success then
-            io.stderr:write("The server did not respond correctly, error code: " .. tostring(result))
+            io.stderr:write("The server did not respond correctly, error code: " .. tostring(result) .. "\n")
         else
             local success, result = FTPCore.UploadFile(FileDetails,true,socket)
             if success then
-                io.write("File Successfully Sent, return code ".. tostring(result))
+                io.write("File Successfully Sent, return code ".. tostring(result) .. "\n")
             else
-                io.stderr:write("Error in upload, Error Code " .. tostring(result))
+                io.stderr:write("Error in upload, Error Code " .. tostring(result) .. "\n")
             end
         end
     elseif response == "RECEIVE" then
@@ -119,9 +119,9 @@ while loop do
         local FileData = fs.size(FileDetails.file)
         local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
         if success then
-            io.write("File Successfully Downloaded, return code ".. tostring(result))
+            io.write("File Successfully Downloaded, return code ".. tostring(result) .. "\n")
         else
-            io.stderr:write("Error in download, Error Code " .. tostring(result))
+            io.stderr:write("Error in download, Error Code " .. tostring(result) .. "\n")
         end
 
     elseif response == "DELETE" then
@@ -130,6 +130,6 @@ while loop do
         loop = false
         socket:close()
     else
-        io.stderr:write("INVALID COMMAND")
+        io.stderr:write("INVALID COMMAND\n")
     end
 end
