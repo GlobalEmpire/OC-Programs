@@ -116,7 +116,7 @@ while loop do
         FileDetails.file = io.read()
         io.write("Enter local file destination (Where it will be downloaded to): ")
         FileDetails.destination = io.read()
-        local FileData = fs.size(FileDetails.file)
+        local FileData = 1
         local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
         if success then
             io.write("File Successfully Downloaded, return code ".. tostring(result) .. "\n")
