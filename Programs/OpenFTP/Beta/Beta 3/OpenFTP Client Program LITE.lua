@@ -60,7 +60,7 @@ local ProbeForSend = function (FileDetails, StepComplete, socket)
         os.sleep() -- \\\\This might need a lengthening to 0.1, if OC is weird.\\\\
     end
     local returnData = socket:read()
-    if returnData[1] == "FTPREADYTORECEIVE" then
+    if type(returnData[1]) == "table" and returnData[1][1] == "FTPREADYTORECEIVE" then
         return true, returnData
     else
         return false, returnData
