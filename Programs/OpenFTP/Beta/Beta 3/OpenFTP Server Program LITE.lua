@@ -37,6 +37,7 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
         local information = fileSockets[originAddress]:read("-k")[1]
         if type(information) == "table" then
             if information[1] == "FTPREADYTORECEIVE" then -- have it update the LIST file when done
+                fileSockets[originAddress]:read()
                 local FileDetails = {
                     file = customPath .. fs.canonical(information[2]),
                     address = originAddress,
@@ -44,6 +45,7 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
                 }
                 local result, lastState = FTPCore.UploadFile(FileDetails,true,fileSockets[originAddress]) -- I might do something with these outputs later
             elseif information[1] == "FTPSENDPROBE" then
+                fileSockets[originAddress]:read()
                 local FileDetails = SRL.unserialize(information[2])
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
@@ -59,6 +61,7 @@ end
 local completeSocketListener = event.listen("GERTConnectionID",CompleteSocket)
 local closeSocketListener = event.listen("GERTConnectionClose",CloseSocket)
 local GERTDataHandlerListener = event.listen("GERTData",GERTDataHandler)
+
 
 io.write("OpenFTP Beta 3 LITE has been successfully started.\nTo shut down the program, type EXIT, to run in background, type BACKGROUND.\nIf the io crashes, the program will continue running in the background.\nThe only way to stop the program after this is to either kill its processes, or reboot.\n")
 local response = true
