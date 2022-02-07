@@ -10,6 +10,9 @@ local FTPCore = require("FTPCore")
 
 
 local customPath = "/home/OpenFTP/"
+if not fs.isDirectory(customPath) then
+    fs.makeDirectory(customPath)
+end
 local customPort = 98
 local fileSockets = {}
 
