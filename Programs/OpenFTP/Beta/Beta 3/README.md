@@ -9,7 +9,7 @@ All variants of OpenFTP Beta 3.0 require `FTPCore.lua`, which can be found in th
 You will find both files under the LITE folder next to this file.
 The installation procedure is as follows:
 - Ensure `GERTiClient.lua` and `FTPCore.lua` are installed on all machines involved.
-- Install 
+- Install `OpenFTPLITE-SERVER.lua` onto the server device. Edit the file and modify `customPath` (line 12) if you wish to have a different path.
 
 
 ## OpenFTP FULL
