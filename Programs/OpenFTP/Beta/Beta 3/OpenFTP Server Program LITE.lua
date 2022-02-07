@@ -33,7 +33,11 @@ local function CloseSocket(_, originAddress,destAddress)
 end
 
 local function GERTDataHandler(_,originAddress,connectionID,data)
+    print(1)
+    print(not(not(fileSockets[originAddress])))
+    print(connectionID == customPort)
     if fileSockets[originAddress] and connectionID == customPort then
+        print(2)
         local information = fileSockets[originAddress]:read("-k")
         if type(information) == "table" then
             if information[1] == "FTPREADYTORECEIVE" then -- have it update the LIST file when done
