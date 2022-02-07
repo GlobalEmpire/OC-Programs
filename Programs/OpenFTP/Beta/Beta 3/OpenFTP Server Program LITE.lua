@@ -3,7 +3,6 @@
 local fs = require("filesystem")
 local GERTi = require("GERTiClient")
 local event = require("event")
-local SRL = require("serialization")
 
 local FTPCore = require("FTPCore")
 
@@ -56,7 +55,7 @@ local completeSocketListener = event.listen("GERTConnectionID",CompleteSocket)
 local closeSocketListener = event.listen("GERTConnectionClose",CloseSocket)
 local GERTDataHandlerListener = event.listen("GERTData",GERTDataHandler)
 
-io.write("OpenFTP Beta 3 LITE has been successfully started.\nTo shut down the program, type EXIT.\nIf the io crashes, the program will continue running in the background.\nThe only way to stop the program after this is to either kill its processes, or reboot.")
+io.write("OpenFTP Beta 3 LITE has been successfully started.\nTo shut down the program, type EXIT.\nIf the io crashes, the program will continue running in the background.\nThe only way to stop the program after this is to either kill its processes, or reboot.\n")
 local response = true
 while response ~= "EXIT" do
     response = io.read()
