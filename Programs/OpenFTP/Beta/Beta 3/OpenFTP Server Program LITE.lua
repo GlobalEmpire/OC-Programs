@@ -47,6 +47,11 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
                 local FileDetails = SRL.unserialize(information[2])
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
+                if result then
+                    io.write(tostring(result) .. " " .. tostring(lastState) .. "\n")
+                else
+                    io.stderr:write(tostring(lastState) .. "\n")
+                end
             end
         end
     end
