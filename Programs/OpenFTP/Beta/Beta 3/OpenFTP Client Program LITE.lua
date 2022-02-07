@@ -28,6 +28,7 @@ local DOWNLOADED = 1
 local ALREADYINSTALLED = 10
 
 
+local PERMANENTADDRESS = nil -- Set this if you want to skip the dialogue
 
 
 
@@ -73,15 +74,20 @@ end
 
 
 
-io.write("OpenFTP LITE started. Enter the server's address or EXIT: ")
-local address
-while type(tonumber(address)) ~= "number" and address ~= "EXIT" do
-    address = io.read()
+io.write("OpenFTP LITE started.") 
+local address = PERMANENTADDRESS
+if address == nil then
+    io.write(" Enter the server's address or EXIT: ")
+    while type(tonumber(address)) ~= "number" and address ~= "EXIT" do
+        address = io.read()
+    end
+    if address == "EXIT" then
+        os.exit()
+    end
+    address = tonumber(address)
+else
+    io.write("\n")
 end
-if address == "EXIT" then
-    os.exit()
-end
-address = tonumber(address)
 local FileDetails = {
     address = address,
     port = 98
@@ -102,7 +108,7 @@ while loop do
         FileDetails.file = io.read()
         local success, result = ProbeForSend(FileDetails,true,socket)
         if not success then
-            io.stderr:write("The server did not respond correctly, error code: " .. tostring(result) .. "\n")
+            io.stderr:write("The server did not respond correctly, error code: " .. SRL.serialize(result,true) .. "\n")
         else
             local success, result = FTPCore.UploadFile(FileDetails,true,socket)
             if success then
