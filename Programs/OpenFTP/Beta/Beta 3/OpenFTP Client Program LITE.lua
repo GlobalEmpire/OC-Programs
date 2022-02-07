@@ -5,7 +5,7 @@ local GERTi = require("GERTiClient")
 local event = require("event")
 local SRL = require("serialization")
 
-local FTPCore = require("FTPCore")
+local FTPCore = require("FTPCore") -- Dependency
 
 --Error Codes
 local INVALIDARGUMENT = 0
@@ -31,7 +31,7 @@ local ALREADYINSTALLED = 10
 local PERMANENTADDRESS = nil -- Set this if you want to skip the dialogue
 
 
-
+-- Functions start here
 local SocketWithTimeout = function (Details,Timeout) -- Timeout defaults to 5 seconds. Details must be a keyed array with the address under "address" and the port/CID under "port"
     local socket = GERTi.openSocket(Details.address,Details.port)
     local serverPresence = false
@@ -73,7 +73,7 @@ end
 
 
 
-
+-- IO starts here
 io.write("OpenFTP LITE started.") 
 local address = PERMANENTADDRESS
 if address == nil then
@@ -97,7 +97,7 @@ if not success then
     io.stderr:write("Server Unreachable.")
     os.exit()
 end
-io.write("Successfully Established Socket.\nSelect your mode:\nSEND RECEIVE DELETE EXIT\n")
+io.write("Successfully Established Socket.\nSelect your mode:\nSEND RECEIVE DELETE MKDIR EXIT\n")
 local loop = true
 while loop do
     local response = io.read()
@@ -124,14 +124,64 @@ while loop do
         FileDetails.destination = io.read()
         local FileData = 1
         local success, result = FTPCore.DownloadFile(FileDetails,FileData,socket)
-        if success then
-            io.write("File Successfully Downloaded, return code ".. tostring(result) .. "\n")
+        if success or result == 0 then
+            io.write("File successfully downloaded, return code ".. tostring(result) .. "\n")
         else
-            io.stderr:write("Error in download, Error Code " .. tostring(result) .. "\n")
+            io.stderr:write("Error in download, error code " .. tostring(result) .. "\n")
         end
-
     elseif response == "DELETE" then
-
+        io.write("Please enter the file or directory you wish to delete:\n/home/OpenFTP/")
+        local path = io.read()
+        io.write("Are you sure? This is permanent. Type CONFIRM to confirm.\n")
+        local answer = io.read()
+        if answer == "CONFIRM" then
+            io.write("CONFIRMED\n")
+            socket:write("FTPDELETE",path)
+            local success = event.pullFiltered(5, function (eventName, iAdd, dAdd, CID) if (iAdd == FileDetails.address or dAdd == FileDetails.address) and (dAdd == FileDetails.port or CID == FileDetails.port) then if eventName == "GERTConnectionClose" or eventName == "GERTData" then return true end end return false end)
+            if success == "GERTConnectionClose" then
+                return false, INTERRUPTED
+            elseif not success then
+                return false, TIMEOUT
+            end
+            while #socket:read("-k") == 0 do
+                os.sleep() -- \\\\This might need a lengthening to 0.1, if OC is weird.\\\\
+            end
+            local information = socket:read()[1]
+            if type(information) == "table" then
+                if information[1] == nil then
+                    io.stderr:write("Unable to delete entry at path, error code: " .. tostring(information[2]) .. "\n")
+                else
+                    io.write("Successfully Deleted.\n")
+                end
+            else
+                if information == true then
+                    io.write("File/Folder successfully deleted.\n")
+                else
+                    io.stderr:write("Error during operation, no details provided.\n")
+                end
+            end
+        else
+            io.write("Aborted.\n")
+        end
+    elseif response == "MKDIR" then
+        io.write("Enter path of new directory: /home/OpenFTP/")
+        local path = io.read()
+        socket:write("FTPNEWDIR",path)
+        local success = event.pullFiltered(5, function (eventName, iAdd, dAdd, CID) if (iAdd == FileDetails.address or dAdd == FileDetails.address) and (dAdd == FileDetails.port or CID == FileDetails.port) then if eventName == "GERTConnectionClose" or eventName == "GERTData" then return true end end return false end)
+        if success == "GERTConnectionClose" then
+            return false, INTERRUPTED
+        elseif not success then
+            return false, TIMEOUT
+        end
+        while #socket:read("-k") == 0 do
+            os.sleep() -- \\\\This might need a lengthening to 0.1, if OC is weird.\\\\
+        end
+        local information = socket:read()[1]
+        if information == true then
+            io.write("Successfully created directory\n")
+        else
+            io.stderr:write("Unable to create directory at path, error code: " .. tostring(information[2]) .. "\n")
+        end
     elseif response == "EXIT" then
         loop = false
         socket:close()

@@ -32,11 +32,23 @@ local function CloseSocket(_, originAddress,destAddress)
     return true
 end
 
+local function updateListFile(directory)
+    local listString = ""
+    for v in fs.list(directory) do
+        if v ~= "list" then
+            listString = listString .. v .. "\n"
+        end
+    end
+    local listFile = io.open(directory .. "list", "w")
+    listFile:write(listString)
+    listFile:close()
+end
+
 local function GERTDataHandler(_,originAddress,connectionID,data)
     if fileSockets[originAddress] ~= nil and connectionID == customPort then
         local information = fileSockets[originAddress]:read("-k")[1]
         if type(information) == "table" then
-            if information[1] == "FTPREADYTORECEIVE" then -- have it update the LIST file when done
+            if information[1] == "FTPREADYTORECEIVE" then
                 fileSockets[originAddress]:read()
                 local FileDetails = {
                     file = customPath .. fs.canonical(information[2]),
@@ -44,12 +56,26 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
                     port = customPort
                 }
                 local result, lastState = FTPCore.UploadFile(FileDetails,true,fileSockets[originAddress]) -- I might do something with these outputs later
+                local directory = fs.path(FileDetails.file)
+                updateListFile(directory)
             elseif information[1] == "FTPSENDPROBE" then
                 fileSockets[originAddress]:read()
                 local FileDetails = SRL.unserialize(information[2])
                 FileDetails.address = originAddress
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
+            elseif information[1] == "FTPDELETE" then
+                local directory = customPath .. fs.canonical(information[2])
+                fileSockets[originAddress]:read()
+                local success, result = fs.remove(directory)
+                fileSockets[originAddress]:write(success,result)
+                updateListFile(fs.path(directory))
+            elseif information[1] == "FTPNEWDIR" then
+                fileSockets[originAddress]:read()
+                local directory = customPath .. fs.canonical(information[2])
+                local success, result = fs.makeDirectory(directory)
+                fileSockets[originAddress]:write(success,result)
+                updateListFile(fs.path(directory))
             end
         end
     end
