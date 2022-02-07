@@ -47,6 +47,7 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
             elseif information[1] == "FTPSENDPROBE" then
                 fileSockets[originAddress]:read()
                 local FileDetails = SRL.unserialize(information[2])
+                FileDetails.address = originAddress
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
             end
