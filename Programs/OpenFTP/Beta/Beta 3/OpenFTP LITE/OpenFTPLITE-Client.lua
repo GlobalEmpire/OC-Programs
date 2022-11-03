@@ -99,6 +99,7 @@ io.write("Successfully Established Socket.\nSelect your mode:\nSEND RECEIVE DELE
 local loop = true
 while loop do
     local response = io.read()
+    response = response:upper()
     if response == "SEND" then
         io.write("Enter destination of file on server: /home/OpenFTP/")
         FileDetails.destination = io.read()

@@ -65,8 +65,11 @@ local function GERTDataHandler(_,originAddress,connectionID,data)
                 fileSockets[originAddress]:read()
                 local FileDetails = SRL.unserialize(information[2])
                 FileDetails.address = originAddress
+                FileDetails.destination = customPath .. fs.canonical(FileDetails.destination)
                 local FileData = SRL.unserialize(information[3])
                 local result, lastState = FTPCore.DownloadFile(FileDetails,FileData,fileSockets[originAddress])
+                local directory = fs.path(FileDetails.destination)
+                updateListFile(directory)
             elseif information[1] == "FTPDELETE" then
                 local directory = customPath .. fs.canonical(information[2])
                 fileSockets[originAddress]:read()
